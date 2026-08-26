@@ -1,0 +1,73 @@
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Guest = void 0;
+const mongoose_1 = __importStar(require("mongoose"));
+const GuestSchema = new mongoose_1.Schema({
+    eventId: { type: mongoose_1.Schema.Types.ObjectId, ref: 'Event', required: true, index: true },
+    name: { type: String, required: true, trim: true },
+    email: { type: String, lowercase: true, trim: true },
+    phone: { type: String, trim: true },
+    relationship: {
+        type: String,
+        enum: ['Family', 'Friend', 'Colleague', 'VIP', 'Relative', 'Other'],
+        default: 'Relative',
+    },
+    group: { type: String, default: 'General' },
+    invitationStatus: {
+        type: String,
+        enum: ['NOT_SENT', 'SENT', 'OPENED', 'FAILED'],
+        default: 'NOT_SENT',
+    },
+    rsvpStatus: {
+        type: String,
+        enum: ['PENDING', 'ACCEPTED', 'DECLINED', 'TENTATIVE'],
+        default: 'PENDING',
+        index: true,
+    },
+    mealPreference: {
+        type: String,
+        enum: ['Veg', 'Non-Veg', 'Jain', 'Vegan'],
+        default: 'Veg',
+    },
+    plusGuests: { type: Number, default: 0 },
+    assignedTable: { type: String },
+    assignedSeat: { type: String },
+    checkInStatus: { type: Boolean, default: false, index: true },
+    checkInTime: { type: String },
+    qrToken: { type: String, index: true },
+}, { timestamps: true });
+GuestSchema.index({ eventId: 1, checkInStatus: 1 });
+exports.Guest = mongoose_1.default.model('Guest', GuestSchema);

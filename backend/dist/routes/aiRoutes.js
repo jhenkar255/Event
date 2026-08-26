@@ -1,0 +1,12 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const aiController_1 = require("../controllers/aiController");
+const auth_1 = require("../middleware/auth");
+const router = (0, express_1.Router)();
+router.post('/plan', auth_1.optionalAuth, aiController_1.generateEventPlan);
+router.post('/parse-prompt', auth_1.optionalAuth, aiController_1.parseNaturalPrompt);
+router.post('/budget-optimize', auth_1.optionalAuth, aiController_1.optimizeBudget);
+router.post('/chat', auth_1.optionalAuth, aiController_1.chatAssistant);
+router.post('/save-recommendation', auth_1.authenticateToken, aiController_1.saveRecommendation);
+exports.default = router;

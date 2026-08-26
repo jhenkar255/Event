@@ -1,0 +1,263 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.updateChecklist = exports.deleteEvent = exports.updateEvent = exports.getEventById = exports.createEvent = exports.getEvents = void 0;
+const mongoose_1 = __importDefault(require("mongoose"));
+const Event_1 = require("../models/Event");
+const Guest_1 = require("../models/Guest");
+const Payment_1 = require("../models/Payment");
+const LiveStream_1 = require("../models/LiveStream");
+const EventSchedule_1 = require("../models/EventSchedule");
+const EventDesign_1 = require("../models/EventDesign");
+const SeatingLayout_1 = require("../models/SeatingLayout");
+const Invitation_1 = require("../models/Invitation");
+const constants_1 = require("../../../shared/constants");
+const socketService_1 = require("../services/socketService");
+const getEvents = async (req, res) => {
+    try {
+        const filter = {};
+        // Regular users see only their own events unless Admin/Organizer
+        if (req.user?.role === 'USER') {
+            filter.createdBy = req.user.id;
+        }
+        else if (req.query.userId) {
+            filter.createdBy = req.query.userId;
+        }
+        if (req.query.type) {
+            filter.type = req.query.type;
+        }
+        if (req.query.status) {
+            filter.status = req.query.status;
+        }
+        if (req.query.city) {
+            filter['location.city'] = new RegExp(req.query.city, 'i');
+        }
+        const events = await Event_1.Event.find(filter).populate('venue').sort({ date: 1, createdAt: -1 });
+        res.json({ success: true, count: events.length, events });
+    }
+    catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+exports.getEvents = getEvents;
+const createEvent = async (req, res) => {
+    try {
+        const eventData = {
+            ...req.body,
+            type: req.body.type || req.body.eventType || 'Wedding',
+            venue: req.body.venue || req.body.venueId || undefined,
+            createdBy: req.user?.id,
+        };
+        // Auto-generate checklist items based on event type if not provided
+        if (!eventData.checklist || eventData.checklist.length === 0) {
+            const template = constants_1.DEFAULT_CHECKLIST_TEMPLATES[eventData.type] || constants_1.DEFAULT_CHECKLIST_TEMPLATES.Other;
+            eventData.checklist = template.map((item, index) => ({
+                id: `chk-${Date.now()}-${index}`,
+                title: item.title,
+                category: item.category,
+                isCompleted: false,
+            }));
+        }
+        const event = await Event_1.Event.create(eventData);
+        // Initialize accompanying records: LiveStream, Schedule, Design, Seating, Invitation
+        await LiveStream_1.LiveStream.create({
+            eventId: event._id,
+            title: `${event.name} - Live Celebration Broadcast`,
+            description: `Watch the auspicious moments of ${event.name} live in high-definition.`,
+            status: 'NOT_STARTED',
+        });
+        await EventSchedule_1.EventSchedule.create({
+            eventId: event._id,
+            activities: [
+                { id: 'act-1', time: '10:00 AM', title: 'Traditional Guest Welcome & Tilak', description: 'Rose water reception & welcome drinks' },
+                { id: 'act-2', time: '11:30 AM', title: 'Main Ceremonial Rituals / Activities', description: 'Auspicious rites with family' },
+                { id: 'act-3', time: '01:30 PM', title: 'Royal Feast & Banquet Buffet', description: 'Multi-cuisine banquet' },
+                { id: 'act-4', time: '04:00 PM', title: 'Celebration, Music & Photo Sessions', description: 'Family photographs and musical troupe' },
+            ],
+        });
+        await EventDesign_1.EventDesign.create({
+            eventId: event._id,
+            elements: [
+                { id: 'el-1', type: 'mandap', x: 450, y: 100, width: 300, height: 200, rotation: 0, color: '#C9A227', label: 'Grand Mandap' },
+                { id: 'el-2', type: 'stage', x: 450, y: 350, width: 300, height: 120, rotation: 0, color: '#7A1F2B', label: 'Main Stage' },
+                { id: 'el-3', type: 'entrance', x: 500, y: 650, width: 200, height: 80, rotation: 0, color: '#F4A340', label: 'Royal Arch Entrance' },
+                { id: 'el-4', type: 'rangoli', x: 550, y: 550, width: 100, height: 100, rotation: 0, color: '#FFB800', label: 'Marigold Rangoli' },
+            ],
+            themeName: event.theme || 'Royal Cultural Elegance',
+        });
+        await SeatingLayout_1.SeatingLayout.create({
+            eventId: event._id,
+            layoutType: 'Round Tables',
+            tables: [
+                { id: 'tbl-1', name: 'Table 1 - VIP Royal', shape: 'round', x: 200, y: 250, capacity: 8, assignedGuests: [] },
+                { id: 'tbl-2', name: 'Table 2 - Bride Family', shape: 'round', x: 200, y: 400, capacity: 8, assignedGuests: [] },
+                { id: 'tbl-3', name: 'Table 3 - Groom Family', shape: 'round', x: 900, y: 250, capacity: 8, assignedGuests: [] },
+                { id: 'tbl-4', name: 'Table 4 - Friends & Colleagues', shape: 'round', x: 900, y: 400, capacity: 8, assignedGuests: [] },
+            ],
+            totalSeats: 32,
+            assignedSeats: 0,
+        });
+        const inviteData = req.body.invitation || {};
+        await Invitation_1.Invitation.create({
+            eventId: event._id,
+            templateId: 'royal-rajasthani',
+            title: inviteData.title || event.name,
+            hostNames: inviteData.hostNames || 'The Family Cordially Invites You',
+            eventDate: event.date,
+            eventTime: event.startTime || '10:00 AM',
+            venueName: event.location.address,
+            venueAddress: `${event.location.city}, ${event.location.state}`,
+            customMessage: inviteData.customMessage || 'We request the honour of your auspicious presence and blessings as we celebrate this joyous milestone.',
+            shlokaOrQuote: inviteData.shlokaOrQuote || 'सर्वमङ्गलमाङ्गल्ये शिवे सर्वार्थसाधिके | शरण्ये त्र्यम्बके गौरि नारायणि नमोऽस्तु ते',
+            themeColor: '#7A1F2B',
+        });
+        res.status(201).json({
+            success: true,
+            message: 'Event created and planning modules initialized successfully!',
+            event,
+        });
+    }
+    catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+exports.createEvent = createEvent;
+const getEventById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        let event = null;
+        if (id && mongoose_1.default.Types.ObjectId.isValid(id)) {
+            event = await Event_1.Event.findById(id).populate('venue').populate('createdBy', 'name email phone');
+        }
+        if (!event && id) {
+            event = await Event_1.Event.findOne({ eventId: id }).populate('venue').populate('createdBy', 'name email phone');
+        }
+        // Fallback: If id is 'demo' or event wasn't found, find the latest seeded / created event
+        if (!event) {
+            event = await Event_1.Event.findOne().sort({ createdAt: -1 }).populate('venue').populate('createdBy', 'name email phone');
+        }
+        if (!event) {
+            res.status(404).json({ success: false, message: 'Celebration event not found in database.' });
+            return;
+        }
+        // Populate invitation if available
+        const invitation = await Invitation_1.Invitation.findOne({ eventId: event._id });
+        const eventObj = event.toObject ? event.toObject() : { ...event };
+        if (invitation) {
+            eventObj.invitation = invitation;
+        }
+        // Compute live event stats
+        const totalGuests = await Guest_1.Guest.countDocuments({ eventId: event._id });
+        const acceptedRSVP = await Guest_1.Guest.countDocuments({ eventId: event._id, rsvpStatus: 'ACCEPTED' });
+        const checkedInGuests = await Guest_1.Guest.countDocuments({ eventId: event._id, checkInStatus: true });
+        const payments = await Payment_1.Payment.find({ eventId: event._id, status: 'SUCCESS' });
+        const totalSpent = payments.reduce((acc, p) => acc + (p.totalAmount || p.amount || 0), 0);
+        // Compute dynamic risk alerts
+        const alerts = [];
+        if (totalSpent > event.budget) {
+            alerts.push({
+                id: 'alert-budget',
+                type: 'BUDGET',
+                severity: 'HIGH',
+                message: `Budget exceeded by ₹${(totalSpent - event.budget).toLocaleString('en-IN')}`,
+                suggestedAction: 'Review optional entertainment and floral decor items.',
+            });
+        }
+        if (acceptedRSVP > event.guestCount) {
+            alerts.push({
+                id: 'alert-capacity',
+                type: 'CATERING',
+                severity: 'MEDIUM',
+                message: `Accepted RSVPs (${acceptedRSVP}) exceed target guest count (${event.guestCount}).`,
+                suggestedAction: 'Increase catering plate count to avoid shortage.',
+            });
+        }
+        res.json({
+            success: true,
+            event: eventObj,
+            stats: {
+                totalGuests,
+                acceptedRSVP,
+                checkedInGuests,
+                totalSpent,
+                remainingBudget: Math.max(0, event.budget - totalSpent),
+                checklistCompleted: event.checklist?.filter((c) => c.isCompleted).length || 0,
+                checklistTotal: event.checklist?.length || 0,
+            },
+            dynamicRiskAlerts: alerts,
+        });
+    }
+    catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+exports.getEventById = getEventById;
+const updateEvent = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const event = await Event_1.Event.findById(id);
+        if (!event) {
+            res.status(404).json({ success: false, message: 'Event not found.' });
+            return;
+        }
+        // Check authorization
+        if (req.user?.role === 'USER' && event.createdBy.toString() !== req.user.id) {
+            res.status(403).json({ success: false, message: 'Unauthorized to modify this event.' });
+            return;
+        }
+        const previousStatus = event.status;
+        const updatedEvent = await Event_1.Event.findByIdAndUpdate(id, req.body, { new: true });
+        // Emit live event status change via WebSockets if status changed
+        if (req.body.status && req.body.status !== previousStatus) {
+            socketService_1.SocketService.emitToEvent(id, 'event:status_change', {
+                status: req.body.status,
+                message: `Event status transitioned to ${req.body.status}`,
+            });
+        }
+        res.json({ success: true, message: 'Event updated successfully.', event: updatedEvent });
+    }
+    catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+exports.updateEvent = updateEvent;
+const deleteEvent = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const event = await Event_1.Event.findById(id);
+        if (!event) {
+            res.status(404).json({ success: false, message: 'Event not found.' });
+            return;
+        }
+        if (req.user?.role === 'USER' && event.createdBy.toString() !== req.user.id) {
+            res.status(403).json({ success: false, message: 'Unauthorized to delete this event.' });
+            return;
+        }
+        await Event_1.Event.findByIdAndDelete(id);
+        await Guest_1.Guest.deleteMany({ eventId: id });
+        await LiveStream_1.LiveStream.deleteOne({ eventId: id });
+        await EventSchedule_1.EventSchedule.deleteOne({ eventId: id });
+        await EventDesign_1.EventDesign.deleteOne({ eventId: id });
+        await SeatingLayout_1.SeatingLayout.deleteOne({ eventId: id });
+        await Invitation_1.Invitation.deleteOne({ eventId: id });
+        res.json({ success: true, message: 'Event and all related records deleted successfully.' });
+    }
+    catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+exports.deleteEvent = deleteEvent;
+const updateChecklist = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { checklist } = req.body;
+        const event = await Event_1.Event.findByIdAndUpdate(id, { checklist }, { new: true });
+        res.json({ success: true, checklist: event?.checklist });
+    }
+    catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+exports.updateChecklist = updateChecklist;

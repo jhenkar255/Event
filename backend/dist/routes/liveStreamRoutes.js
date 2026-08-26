@@ -1,0 +1,10 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const liveStreamController_1 = require("../controllers/liveStreamController");
+const auth_1 = require("../middleware/auth");
+const router = (0, express_1.Router)();
+router.get('/events/:eventId/live', liveStreamController_1.getLiveStream);
+router.put('/events/:eventId/live', auth_1.authenticateToken, liveStreamController_1.updateLiveStream);
+router.post('/events/:eventId/live/announcements', auth_1.authenticateToken, liveStreamController_1.postAnnouncement);
+exports.default = router;

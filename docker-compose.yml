@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: utsavmitra-api
+    restart: always
+    environment:
+      - PORT=5050
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb+srv://Jhenkar2005:Jhenkar%402005@cluster0.xmxj8sa.mongodb.net/utsavmitra?retryWrites=true&w=majority&appName=Cluster0
+      - JWT_SECRET=utsavmitra_super_secret_jwt_key_2026_auspicious
+      - JWT_REFRESH_SECRET=utsavmitra_refresh_secret_key_2026_auspicious
+      - QR_SIGNING_SECRET=utsavmitra_qr_token_signing_secret_key_2026
+      - CLIENT_URL=http://localhost:5173
+    ports:
+      - "5050:5050"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        - VITE_API_URL=http://localhost:5050
+    container_name: utsavmitra-ui
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
