@@ -4,7 +4,7 @@ services:
   # -------------------------------------------------------------
   - type: web
     name: utsavmitra-backend
-    env: node
+    runtime: node
     plan: free
     rootDir: backend
     buildCommand: npm install && npm run build
@@ -22,19 +22,12 @@ services:
         generateValue: true
       - key: QR_SIGNING_SECRET
         generateValue: true
-      - key: CLIENT_URL
-        fromService:
-          type: web
-          name: utsavmitra-frontend
-          property: host
 
   # -------------------------------------------------------------
   # 2. Frontend Static Site (Vite / React SPA)
   # -------------------------------------------------------------
-  - type: web
+  - type: static
     name: utsavmitra-frontend
-    env: static
-    plan: free
     rootDir: frontend
     buildCommand: npm install && npm run build
     staticPublishPath: dist
@@ -42,9 +35,3 @@ services:
       - type: rewrite
         source: /*
         destination: /index.html
-    envVars:
-      - key: VITE_API_URL
-        fromService:
-          type: web
-          name: utsavmitra-backend
-          property: host
