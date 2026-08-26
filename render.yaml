@@ -26,8 +26,9 @@ services:
   # -------------------------------------------------------------
   # 2. Frontend Static Site (Vite / React SPA)
   # -------------------------------------------------------------
-  - type: static_site
+  - type: web
     name: utsavmitra-frontend
+    env: static
     rootDir: frontend
     buildCommand: npm install && npm run build
     staticPublishPath: dist
