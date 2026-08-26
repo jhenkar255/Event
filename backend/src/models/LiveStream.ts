@@ -1,5 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
-import { ILiveStream } from '../../../shared/types';
+import { ILiveStream } from '../shared/types';
 
 export interface ILiveStreamDocument extends Omit<ILiveStream, '_id'>, Document {}
 

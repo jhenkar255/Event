@@ -31,5 +31,8 @@ __exportStar(require("./Notification"), exports);
 __exportStar(require("./EventSchedule"), exports);
 __exportStar(require("./LiveStream"), exports);
 __exportStar(require("./QRCodeModel"), exports);
+__exportStar(require("./EventQRCode"), exports);
+__exportStar(require("./EventCheckIn"), exports);
 __exportStar(require("./Refund"), exports);
 __exportStar(require("./AIRecommendation"), exports);
+__exportStar(require("./AuditLog"), exports);

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.exportReportCsv = exports.getAdminRefunds = exports.getAdminBookings = exports.getAdminPayments = exports.getAdminEvents = exports.updateAdminUserRole = exports.getAdminUsers = exports.getAdminDashboardStats = void 0;
+exports.exportReportCsv = exports.getAdminRefunds = exports.getAdminBookings = exports.getAdminPayments = exports.getAdminEvents = exports.createAdminByAdmin = exports.getAuditLogs = exports.updateOrganizerStatus = exports.updateAdminUserRole = exports.getAdminOrganizers = exports.getAdminUsers = exports.getAdminDashboardStats = void 0;
 const User_1 = require("../models/User");
 const Event_1 = require("../models/Event");
 const Venue_1 = require("../models/Venue");
@@ -8,10 +8,13 @@ const Booking_1 = require("../models/Booking");
 const Payment_1 = require("../models/Payment");
 const Refund_1 = require("../models/Refund");
 const Guest_1 = require("../models/Guest");
+const AuditLog_1 = require("../models/AuditLog");
 const reportService_1 = require("../services/reportService");
 const getAdminDashboardStats = async (req, res) => {
     try {
-        const totalUsers = await User_1.User.countDocuments();
+        const totalUsers = await User_1.User.countDocuments({ role: 'USER' });
+        const totalOrganizers = await User_1.User.countDocuments({ role: 'ORGANIZER' });
+        const totalAdmins = await User_1.User.countDocuments({ role: 'ADMIN' });
         const totalEvents = await Event_1.Event.countDocuments();
         const activeEvents = await Event_1.Event.countDocuments({ status: { $in: ['PLANNING', 'CONFIRMED', 'ONGOING'] } });
         const completedEvents = await Event_1.Event.countDocuments({ status: 'COMPLETED' });
@@ -20,7 +23,7 @@ const getAdminDashboardStats = async (req, res) => {
         const totalGuests = await Guest_1.Guest.countDocuments();
         const totalCheckIns = await Guest_1.Guest.countDocuments({ checkInStatus: true });
         const payments = await Payment_1.Payment.find({ status: 'SUCCESS' });
-        const totalRevenue = payments.reduce((acc, p) => acc + p.totalAmount, 0);
+        const totalRevenue = payments.reduce((acc, p) => acc + (p.totalAmount || p.amount || 0), 0);
         const refunds = await Refund_1.Refund.find({ status: 'PROCESSED' });
         const totalRefunded = refunds.reduce((acc, r) => acc + r.amount, 0);
         // Event type distribution
@@ -40,6 +43,8 @@ const getAdminDashboardStats = async (req, res) => {
             success: true,
             metrics: {
                 totalUsers,
+                totalOrganizers,
+                totalAdmins,
                 totalEvents,
                 activeEvents,
                 completedEvents,
@@ -62,7 +67,7 @@ const getAdminDashboardStats = async (req, res) => {
 exports.getAdminDashboardStats = getAdminDashboardStats;
 const getAdminUsers = async (req, res) => {
     try {
-        const users = await User_1.User.find().select('-password').sort({ createdAt: -1 });
+        const users = await User_1.User.find({ role: 'USER' }).select('-password').sort({ createdAt: -1 });
         res.json({ success: true, count: users.length, users });
     }
     catch (error) {
@@ -70,18 +75,148 @@ const getAdminUsers = async (req, res) => {
     }
 };
 exports.getAdminUsers = getAdminUsers;
+const getAdminOrganizers = async (req, res) => {
+    try {
+        const organizers = await User_1.User.find({ role: 'ORGANIZER' }).select('-password').sort({ createdAt: -1 });
+        res.json({ success: true, count: organizers.length, organizers });
+    }
+    catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+exports.getAdminOrganizers = getAdminOrganizers;
 const updateAdminUserRole = async (req, res) => {
     try {
         const { id } = req.params;
-        const { role } = req.body;
-        const user = await User_1.User.findByIdAndUpdate(id, { role }, { new: true }).select('-password');
-        res.json({ success: true, message: 'User role updated successfully.', user });
+        const { role, status } = req.body;
+        const user = await User_1.User.findByIdAndUpdate(id, { role, status }, { new: true }).select('-password');
+        if (user && req.user) {
+            await AuditLog_1.AuditLog.create({
+                adminId: req.user.id,
+                adminEmail: req.user.email,
+                action: 'USER_UPDATE',
+                targetType: 'USER',
+                targetId: user._id.toString(),
+                details: { newRole: role, newStatus: status, userEmail: user.email },
+                ipAddress: req.ip || '127.0.0.1',
+                userAgent: req.headers['user-agent'] || 'Admin Portal',
+                timestamp: new Date(),
+            });
+        }
+        res.json({ success: true, message: 'User updated successfully.', user });
     }
     catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
 };
 exports.updateAdminUserRole = updateAdminUserRole;
+const updateOrganizerStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { organizerStatus, status } = req.body;
+        const organizer = await User_1.User.findByIdAndUpdate(id, {
+            organizerStatus: organizerStatus || 'APPROVED',
+            status: status || 'ACTIVE',
+        }, { new: true }).select('-password');
+        if (!organizer) {
+            res.status(404).json({ success: false, message: 'Organizer not found.' });
+            return;
+        }
+        if (req.user) {
+            const actionName = organizerStatus === 'APPROVED' ? 'ORGANIZER_APPROVE' : organizerStatus === 'REJECTED' ? 'ORGANIZER_REJECT' : 'ORGANIZER_SUSPEND';
+            await AuditLog_1.AuditLog.create({
+                adminId: req.user.id,
+                adminEmail: req.user.email,
+                action: actionName,
+                targetType: 'ORGANIZER',
+                targetId: organizer._id.toString(),
+                details: {
+                    organizerEmail: organizer.email,
+                    organizationName: organizer.organizationName,
+                    status: organizerStatus,
+                },
+                ipAddress: req.ip || '127.0.0.1',
+                userAgent: req.headers['user-agent'] || 'Admin Portal',
+                timestamp: new Date(),
+            });
+        }
+        res.json({
+            success: true,
+            message: `Organizer status updated to ${organizerStatus}.`,
+            organizer,
+        });
+    }
+    catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+exports.updateOrganizerStatus = updateOrganizerStatus;
+const getAuditLogs = async (req, res) => {
+    try {
+        const { action, targetType, limit = 100 } = req.query;
+        const query = {};
+        if (action)
+            query.action = action;
+        if (targetType)
+            query.targetType = targetType;
+        const logs = await AuditLog_1.AuditLog.find(query).sort({ timestamp: -1 }).limit(Number(limit));
+        res.json({ success: true, count: logs.length, logs });
+    }
+    catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+exports.getAuditLogs = getAuditLogs;
+const createAdminByAdmin = async (req, res) => {
+    try {
+        const { fullName, name, email, password, phone } = req.body;
+        const existingUser = await User_1.User.findOne({ email: (email || '').toLowerCase().trim() });
+        if (existingUser) {
+            res.status(400).json({ success: false, message: 'An account with this email address already exists.' });
+            return;
+        }
+        const displayName = (fullName || name || 'Administrator').trim();
+        const newAdmin = await User_1.User.create({
+            name: displayName,
+            fullName: displayName,
+            email: (email || '').toLowerCase().trim(),
+            password,
+            phone,
+            role: 'ADMIN',
+            status: 'ACTIVE',
+            emailVerified: true,
+            city: 'Jaipur',
+            state: 'Rajasthan',
+        });
+        if (req.user) {
+            await AuditLog_1.AuditLog.create({
+                adminId: req.user.id,
+                adminEmail: req.user.email,
+                action: 'ADMIN_CREATE',
+                targetType: 'USER',
+                targetId: newAdmin._id.toString(),
+                details: { newAdminEmail: newAdmin.email, createdBy: req.user.email },
+                ipAddress: req.ip || '127.0.0.1',
+                userAgent: req.headers['user-agent'] || 'Admin Portal',
+                timestamp: new Date(),
+            });
+        }
+        res.status(201).json({
+            success: true,
+            message: 'New administrator created successfully.',
+            admin: {
+                _id: newAdmin._id,
+                name: newAdmin.name,
+                email: newAdmin.email,
+                role: newAdmin.role,
+            },
+        });
+    }
+    catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+exports.createAdminByAdmin = createAdminByAdmin;
 const getAdminEvents = async (req, res) => {
     try {
         const events = await Event_1.Event.find().populate('createdBy', 'name email phone').sort({ createdAt: -1 });

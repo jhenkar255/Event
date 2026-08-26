@@ -1,5 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
-import { INotification } from '../../../shared/types';
+import { INotification } from '../shared/types';
 
 export interface INotificationDocument extends Omit<INotification, '_id'>, Document {}
 

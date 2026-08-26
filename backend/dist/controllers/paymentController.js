@@ -6,19 +6,20 @@ const Payment_1 = require("../models/Payment");
 const socketService_1 = require("../services/socketService");
 const createPaymentOrder = async (req, res) => {
     try {
-        const { eventId, bookingId, serviceName, amount, customerName, customerEmail } = req.body;
+        const { eventId, bookingId, serviceName, purpose, amount, customerName, customerEmail } = req.body;
         const orderData = await paymentService_1.PaymentService.createOrder({
             eventId,
-            userId: req.user?.id || 'demo_user',
+            userId: req.user?.id,
             bookingId,
-            serviceName: serviceName || 'Event Booking Service',
+            serviceName: purpose || serviceName || 'UtsavMitra Celebration Escrow',
             amount: Number(amount),
-            customerName: customerName || req.user?.name || 'Customer',
-            customerEmail: customerEmail || req.user?.email || 'customer@utsavmitra.demo',
+            customerName: customerName || req.user?.name || 'Valued Guest',
+            customerEmail: customerEmail || req.user?.email || 'guest@utsavmitra.in',
         });
         res.status(201).json({
             success: true,
             message: 'Razorpay payment order initialized.',
+            mockSignature: `sig_mock_${orderData.orderId}_utsavmitra`,
             ...orderData,
         });
     }
@@ -29,27 +30,40 @@ const createPaymentOrder = async (req, res) => {
 exports.createPaymentOrder = createPaymentOrder;
 const verifyPayment = async (req, res) => {
     try {
-        const { razorpayOrderId, razorpayPaymentId, razorpaySignature, paymentRecordId, method, } = req.body;
+        const { razorpayOrderId, razorpay_order_id, razorpayPaymentId, razorpay_payment_id, razorpaySignature, razorpay_signature, paymentRecordId, method, paymentMethod, bookingId, eventId, amount, purpose, serviceName, } = req.body;
+        const finalOrderId = razorpayOrderId || razorpay_order_id;
+        const finalPaymentId = razorpayPaymentId || razorpay_payment_id || `pay_${Date.now()}_simulated`;
+        const finalSignature = razorpaySignature || razorpay_signature;
+        const finalMethod = (method || paymentMethod || 'UPI').toUpperCase();
         const result = await paymentService_1.PaymentService.verifyPayment({
-            razorpayOrderId,
-            razorpayPaymentId,
-            razorpaySignature,
+            razorpayOrderId: finalOrderId,
+            razorpayPaymentId: finalPaymentId,
+            razorpaySignature: finalSignature,
             paymentRecordId,
-            method,
+            bookingId,
+            eventId,
+            amount,
+            serviceName: purpose || serviceName,
+            userId: req.user?.id,
+            method: finalMethod,
         });
-        if (result.success) {
-            // Emit live budget update to event room
-            socketService_1.SocketService.emitToEvent(result.payment.eventId.toString(), 'budget:payment_success', {
-                paymentId: result.payment._id,
-                amount: result.payment.totalAmount,
-                service: result.payment.serviceName,
-            });
-            // Send notification to user
-            socketService_1.SocketService.emitToUser(result.payment.userId.toString(), 'notification:new', {
-                title: 'Payment Successful',
-                message: `₹${result.payment.totalAmount.toLocaleString('en-IN')} paid for ${result.payment.serviceName}.`,
-                type: 'PAYMENT_SUCCESS',
-            });
+        if (result.success && result.payment) {
+            // Emit live budget update to event room if eventId is available
+            if (result.payment.eventId) {
+                socketService_1.SocketService.emitToEvent(result.payment.eventId.toString(), 'budget:payment_success', {
+                    paymentId: result.payment.paymentId,
+                    amount: result.payment.totalAmount || result.payment.amount || 0,
+                    service: result.payment.serviceName,
+                });
+            }
+            // Send notification to user if userId is available
+            if (result.payment.userId) {
+                socketService_1.SocketService.emitToUser(result.payment.userId.toString(), 'notification:new', {
+                    title: 'Payment Successful',
+                    message: `₹${(result.payment.totalAmount || result.payment.amount || 0).toLocaleString('en-IN')} paid for ${result.payment.serviceName}.`,
+                    type: 'PAYMENT_SUCCESS',
+                });
+            }
         }
         res.json(result);
     }
@@ -75,7 +89,7 @@ const getPaymentsByEvent = async (req, res) => {
         const payments = await Payment_1.Payment.find({ eventId }).sort({ createdAt: -1 });
         const totalPaid = payments
             .filter((p) => p.status === 'SUCCESS')
-            .reduce((acc, p) => acc + p.totalAmount, 0);
+            .reduce((acc, p) => acc + (p.totalAmount || p.amount || 0), 0);
         res.json({ success: true, count: payments.length, payments, totalPaid });
     }
     catch (error) {

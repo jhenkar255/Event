@@ -57,7 +57,7 @@ const getCateringPackages = async (req, res) => {
             ];
         }
         const packages = await Catering_1.Catering.find(filter).sort({ rating: -1, pricePerPlate: 1 });
-        res.json({ success: true, count: packages.length, packages });
+        res.json({ success: true, count: packages.length, packages, catering: packages, caterings: packages });
     }
     catch (error) {
         res.status(500).json({ success: false, message: error.message });
@@ -91,7 +91,7 @@ const getEntertainment = async (req, res) => {
             ];
         }
         const items = await Entertainment_1.Entertainment.find(filter).sort({ rating: -1, price: 1 });
-        res.json({ success: true, count: items.length, items });
+        res.json({ success: true, count: items.length, items, entertainment: items, entertainments: items });
     }
     catch (error) {
         res.status(500).json({ success: false, message: error.message });

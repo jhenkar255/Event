@@ -1,5 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
-import { IEventDesign } from '../../../shared/types';
+import { IEventDesign } from '../shared/types';
 
 export interface IEventDesignDocument extends Omit<IEventDesign, '_id'>, Document {}
 

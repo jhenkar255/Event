@@ -1,5 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
-import { IPayment, PaymentStatus } from '../../../shared/types';
+import { IPayment, PaymentStatus } from '../shared/types';
 
 export interface IPaymentDocument extends Omit<IPayment, '_id'>, Document {}
 

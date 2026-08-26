@@ -30,7 +30,7 @@ const verifyAndCheckInQR = async (req, res) => {
             res.status(400).json({ success: false, message: 'QR Token and Event ID are required.' });
             return;
         }
-        const checkInResult = await qrService_1.QRService.processCheckIn(token, eventId);
+        const checkInResult = await qrService_1.QRService.processCheckIn(token, eventId, req.user?.id, req.body.gateName || 'Main Gate');
         if (checkInResult.success && !checkInResult.alreadyCheckedIn && checkInResult.guest) {
             // Broadcast real-time guest entry to event room for Live Command Center
             const totalCheckedIn = await Guest_1.Guest.countDocuments({ eventId, checkInStatus: true });

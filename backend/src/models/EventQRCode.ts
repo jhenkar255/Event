@@ -1,5 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
-import { IEventQRCode, QRCodeStatus } from '../../../shared/types';
+import { IEventQRCode, QRCodeStatus } from '../shared/types';
 
 export interface IEventQRCodeDocument extends Omit<IEventQRCode, '_id'>, Document {}
 

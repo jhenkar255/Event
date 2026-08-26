@@ -9,8 +9,8 @@ import { EventDesign } from '../models/EventDesign';
 import { SeatingLayout } from '../models/SeatingLayout';
 import { Invitation } from '../models/Invitation';
 import { AuthRequest } from '../middleware/auth';
-import { DEFAULT_CHECKLIST_TEMPLATES } from '../../../shared/constants';
-import { EventType } from '../../../shared/types';
+import { DEFAULT_CHECKLIST_TEMPLATES } from '../shared/constants';
+import { EventType } from '../shared/types';
 import { SocketService } from '../services/socketService';
 
 export const getEvents = async (req: AuthRequest, res: Response): Promise<void> => {

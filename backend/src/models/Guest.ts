@@ -1,5 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
-import { IGuest } from '../../../shared/types';
+import { IGuest } from '../shared/types';
 
 export interface IGuestDocument extends Omit<IGuest, '_id'>, Document {}
 

@@ -36,14 +36,19 @@ const seedDatabase = async () => {
         ]);
         console.log('👥 Creating Demo Accounts...');
         const adminUser = await models_1.User.create({
-            name: 'Vikramaditya Rathore (Admin)',
-            email: 'admin@utsavmitra.demo',
-            password: 'Utsav@2026',
+            name: 'Jhenkar (Administrator)',
+            email: 'jhenkar1234@gmail.com',
+            password: 'Jhenkar@12345',
             phone: '+91 98765 43210',
             role: 'ADMIN',
             city: 'Jaipur',
             state: 'Rajasthan',
-            profilePhoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
+            preferences: {
+                culturalPreference: 'Rajasthani',
+                foodPreference: 'Veg',
+                emailNotifications: true,
+                smsNotifications: true,
+            },
         });
         const standardUser = await models_1.User.create({
             name: 'Aarav & Ananya Sharma',
@@ -632,6 +637,45 @@ const seedDatabase = async () => {
             eventDate: '2026-11-20',
             bookingNotes: 'Includes full heritage courtyard, 30 guest suites, and valet parking setup.',
         });
+        const decorBooking = await models_1.Booking.create({
+            eventId: flagshipEvent._id,
+            userId: standardUser._id,
+            itemType: 'DECORATION',
+            itemId: 'decor-rajputana-01',
+            itemName: 'Royal Rajputana Gold Mandap & Floral Toran Theme',
+            amount: 180000,
+            advancePaid: 90000,
+            balanceDue: 90000,
+            status: 'CONFIRMED',
+            eventDate: '2026-11-20',
+            bookingNotes: 'Fresh marigold & jasmine ceiling canopy, 4 carved pillar hawan mandap, and ambient warm floodlights.',
+        });
+        const cateringBooking = await models_1.Booking.create({
+            eventId: flagshipEvent._id,
+            userId: standardUser._id,
+            itemType: 'CATERING',
+            itemId: 'cat-shahi-01',
+            itemName: 'Shahi Marwari Thali & Live Jalebi-Rabdi Counters',
+            amount: 360000,
+            advancePaid: 360000,
+            balanceDue: 0,
+            status: 'CONFIRMED',
+            eventDate: '2026-11-20',
+            bookingNotes: '350 pure vegetarian plates with Jain counter, Dal Baati Churma, Ker Sangri, and saffron sweet station.',
+        });
+        const entertainmentBooking = await models_1.Booking.create({
+            eventId: flagshipEvent._id,
+            userId: standardUser._id,
+            itemType: 'ENTERTAINMENT',
+            itemId: 'ent-shehnai-dhol-01',
+            itemName: 'Royal Rajasthani Manganiyar Troupe & Live Shehnai Swagat',
+            amount: 65000,
+            advancePaid: 65000,
+            balanceDue: 0,
+            status: 'CONFIRMED',
+            eventDate: '2026-11-20',
+            bookingNotes: '6 musicians for Baraat entry and 4 hours live classical instrumental background during ceremony.',
+        });
         await models_1.Payment.create({
             paymentId: 'PAY-VEN-2026-001',
             razorpayOrderId: 'order_987654321',
@@ -657,6 +701,7 @@ const seedDatabase = async () => {
             razorpaySignature: 'sig_verified_demo_2026',
             eventId: flagshipEvent._id,
             userId: standardUser._id,
+            bookingId: cateringBooking._id,
             serviceName: 'Rajwada Royal Feast Catering (350 Guests Advance)',
             amount: 360000,
             taxAmount: 64800,

@@ -1,5 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
-import { ISeatingLayout } from '../../../shared/types';
+import { ISeatingLayout } from '../shared/types';
 
 export interface ISeatingLayoutDocument extends Omit<ISeatingLayout, '_id'>, Document {}
 

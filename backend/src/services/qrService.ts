@@ -7,7 +7,7 @@ import { EventQRCode } from '../models/EventQRCode';
 import { EventCheckIn } from '../models/EventCheckIn';
 import { User } from '../models/User';
 import { SocketService } from './socketService';
-import { IAttendanceSummary, CheckInResultType } from '../../../shared/types';
+import { IAttendanceSummary, CheckInResultType } from '../shared/types';
 
 export class QRService {
   private static signingSecret =

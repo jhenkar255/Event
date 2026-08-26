@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import { Payment } from '../models/Payment';
 import { Booking } from '../models/Booking';
 import { Event } from '../models/Event';
-import { IPayment, PaymentStatus } from '../../../shared/types';
+import { IPayment, PaymentStatus } from '../shared/types';
 
 export class PaymentService {
   private static keyId = process.env.RAZORPAY_KEY_ID || 'rzp_test_utsavmitra2026demo';

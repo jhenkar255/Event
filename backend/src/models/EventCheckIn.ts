@@ -1,5 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
-import { IEventCheckIn, CheckInResultType } from '../../../shared/types';
+import { IEventCheckIn, CheckInResultType } from '../shared/types';
 
 export interface IEventCheckInDocument extends Omit<IEventCheckIn, '_id'>, Document {}
 

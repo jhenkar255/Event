@@ -17,6 +17,7 @@ const liveStreamRoutes_1 = __importDefault(require("./liveStreamRoutes"));
 const aiRoutes_1 = __importDefault(require("./aiRoutes"));
 const notificationReviewRoutes_1 = __importDefault(require("./notificationReviewRoutes"));
 const adminRoutes_1 = __importDefault(require("./adminRoutes"));
+const bookingRoutes_1 = __importDefault(require("./bookingRoutes"));
 const router = (0, express_1.Router)();
 router.use('/auth', authRoutes_1.default);
 router.use('/events', eventRoutes_1.default);
@@ -26,11 +27,35 @@ router.use('/marketplace', marketplaceRoutes_1.default);
 router.use('/', designRoutes_1.default);
 router.use('/invitations', invitationRoutes_1.default);
 router.use('/payments', paymentRoutes_1.default);
+router.use('/bookings', bookingRoutes_1.default);
 router.use('/qr', qrRoutes_1.default);
 router.use('/', liveStreamRoutes_1.default);
 router.use('/ai', aiRoutes_1.default);
 router.use('/', notificationReviewRoutes_1.default);
 router.use('/admin', adminRoutes_1.default);
+// API Root Info endpoint
+router.get('/', (req, res) => {
+    res.json({
+        name: 'UtsavMitra API',
+        tagline: 'Plan. Celebrate. Remember.',
+        version: '1.0.0',
+        status: 'online',
+        health: '/api/health',
+        endpoints: {
+            auth: '/api/auth',
+            events: '/api/events',
+            venues: '/api/venues',
+            guests: '/api/guests',
+            marketplace: '/api/marketplace',
+            invitations: '/api/invitations',
+            payments: '/api/payments',
+            qr: '/api/qr',
+            ai: '/api/ai',
+            admin: '/api/admin',
+        },
+        timestamp: new Date().toISOString(),
+    });
+});
 // Health check endpoint
 router.get('/health', (req, res) => {
     res.json({
@@ -38,6 +63,7 @@ router.get('/health', (req, res) => {
         platform: 'UtsavMitra – AI-Powered Indian Event Management & Planning Platform',
         version: '1.0.0',
         timestamp: new Date().toISOString(),
+        database: 'connected',
     });
 });
 exports.default = router;

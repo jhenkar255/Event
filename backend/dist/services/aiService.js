@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AIService = void 0;
-const constants_1 = require("../../../shared/constants");
+const constants_1 = require("../shared/constants");
 class AIService {
     /**
      * Parse natural language prompts into structured event parameters
@@ -256,34 +256,142 @@ class AIService {
         };
     }
     /**
-     * Intelligent Chat Assistant ("Utsav AI") Q&A context engine
+     * Grok AI Bot Integration for UtsavMitra
+     * Strictly constrained to answer ONLY about what the UTSAVMITRA website creates and manages.
      */
     static async answerAssistantQuery(query, eventContext) {
+        const grokApiKey = process.env.GROK_API_KEY || process.env.XAI_API_KEY || process.env.AI_API_KEY;
+        const grokApiUrl = process.env.GROK_API_URL || 'https://api.x.ai/v1/chat/completions';
+        const grokModel = process.env.GROK_MODEL || 'grok-beta';
+        const systemPrompt = `You are Utsav AI, the official Grok-powered Indian Event Management Copilot for UTSAVMITRA (utsavmitra.com).
+
+CRITICAL DIRECTIVE & STRICT DOMAIN LOCK:
+You are STRICTLY LIMITED to answering questions exclusively about what the UTSAVMITRA website creates, provides, and manages:
+1. AI Cultural Event Planner & Muhurtham Timelines (/ai-planner)
+2. 7-Step Auspicious Event Creation Wizard (/events/create)
+3. 2D Royal Mandap & Stage Blueprint Studio (/mandap-builder)
+4. Royal Baithak & Banquet Dining Seating Planner (/seating)
+5. Heritage Palaces, Forts & Banquets with Geolocation (/venues)
+6. Regional Gastronomy & Feasts with Satvik/Jain & Live Counters (/catering)
+7. Mandap, Floral Decor, Diya Walkways & Stage Setups (/decorations)
+8. Shehnai, Dhol Tasha, Live Bands & Cinematic 4K Photo (/entertainment)
+9. Digital E-Invitations, Signed HMAC QR Entry Passes & Webcam QR Gate Scanner (/scanner)
+10. Live Event Command Center, Broadcast & Attendance Tracking (/events/:id)
+11. Role-Based Access: Client/Host Dashboard, Organizer Studio (/organizer/dashboard), and Admin Portal (/admin).
+
+IF THE USER ASKS ABOUT ANYTHING UNRELATED TO UTSAVMITRA OR INDIAN EVENT PLANNING (such as general software code, politics, outside companies, unrelated trivia, etc.):
+You MUST politely decline and refocus them with this exact greeting and boundary:
+"Namaste! 🙏 I am **Utsav AI** (powered by Grok), specialized exclusively in **UtsavMitra** — India's premier AI-powered cultural event planning platform. I can only assist you with what this website creates: traditional celebration planning, 2D mandap blueprints, regional feasts, seating layouts, heritage venues, and QR entry passes. How can I help you organize your celebration on UtsavMitra today?"
+
+Always maintain a warm, respectful, and authentic Indian tone ("Namaste! 🙏"). Use markdown formatting with bullet points and bold highlights.`;
+        // Attempt live Grok API call if API key is provided
+        if (grokApiKey) {
+            try {
+                const response = await fetch(grokApiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${grokApiKey}`,
+                    },
+                    body: JSON.stringify({
+                        model: grokModel,
+                        messages: [
+                            { role: 'system', content: systemPrompt },
+                            {
+                                role: 'user',
+                                content: `Event Context: ${JSON.stringify(eventContext || {})}\n\nUser Question: ${query}`,
+                            },
+                        ],
+                        temperature: 0.4,
+                        max_tokens: 600,
+                    }),
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    const reply = data.choices?.[0]?.message?.content;
+                    if (reply)
+                        return reply;
+                }
+            }
+            catch (err) {
+                console.warn('Grok AI API call failed, falling back to local Grok knowledge engine:', err);
+            }
+        }
+        // Local Grok-Powered Domain-Locked Knowledge Engine
+        return this.answerWithGrokKnowledgeEngine(query, eventContext);
+    }
+    /**
+     * Local Grok Knowledge Engine strictly answering what UTSAVMITRA website creates
+     */
+    static answerWithGrokKnowledgeEngine(query, eventContext) {
         const q = query.toLowerCase();
-        if (q.includes('remaining budget') || q.includes('how much budget left') || q.includes('budget left')) {
+        // 1. Inquiries about what the website creates / platform overview
+        if (q.includes('what website create') ||
+            q.includes('what does this website') ||
+            q.includes('what is utsavmitra') ||
+            q.includes('what can you do') ||
+            q.includes('features') ||
+            q.includes('about') ||
+            q.includes('platform')) {
+            return `Namaste! 🙏 **UTSAVMITRA** is India's premier AI-powered cultural event management platform. Here is everything our website creates and manages for your celebrations:
+
+1. 🪔 **AI Cultural Planner (\`/ai-planner\`):** Generates auspicious Muhurtham schedules, ritual timelines, and dynamic budget breakdowns for 12 Indian regional traditions.
+2. 🏛️ **Heritage Venues & Forts (\`/venues\`):** Discover and book royal palaces, heritage forts, and luxury banquets with Razorpay escrow protection and interactive maps.
+3. 🎨 **2D Mandap Studio (\`/mandap-builder\`):** Interactive visual designer for traditional floral mandaps, havan kunds, varmala stages, and royal entry arches.
+4. 🪑 **Royal Baithak & Seating Planner (\`/seating\`):** Drag-and-drop banquet table layouts, royal diwan arrangements, and VIP guest seat allocations.
+5. 🍲 **Regional Gastronomy & Feasts (\`/catering\`):** Curate authentic multi-course menus, live jalebi/chaat counters, pure desi ghee preparations, and Satvik/Jain dietary headcounts.
+6. 🌸 **Decor, Floral & Music Marketplace (\`/decorations\`, \`/entertainment\`):** Book verified traditional marigold decor, brass diyas, shehnai troupes, dhol tasha, and cinematic 4K photographers.
+7. 🎟️ **Cryptographic QR Passes & Live Gate Scanner (\`/scanner\`):** Send Sanskrit digital WhatsApp invitations and verify guests at the entrance using HMAC digital QR passes.
+8. 📡 **Live Command Center (\`/events/:id\`):** Real-time gate check-in attendance, ceremony live stream broadcast, and instant schedule alerts.
+
+How can I help you plan your next celebration on UtsavMitra?`;
+        }
+        // 2. Inquiries about 2D Mandap Studio
+        if (q.includes('mandap') || q.includes('2d') || q.includes('stage design') || q.includes('havan kund')) {
+            return `🎨 **2D Royal Mandap Studio (Created by UtsavMitra):**\nOur interactive studio (\`/mandap-builder\`) allows you to architect your ceremonial stage:\n- **Drag-and-Drop Elements:** Place floral mandaps, sacred havan kunds, varmala stages, marigold rangolis, and royal archways.\n- **Vedic Directional Guidance:** Orient the sacred mandap towards auspicious directions.\n- **Theme Customization:** Choose from *Royal Rajputana Gold & Crimson*, *Vedic Temple Sandalwood*, and *Mogra Bliss*.\n- **Instant Export:** Share blueprints directly with decorators and venue managers.`;
+        }
+        // 3. Inquiries about Seating & Baithak Planner
+        if (q.includes('seating') || q.includes('baithak') || q.includes('table') || q.includes('chair')) {
+            return `🪑 **Royal Baithak & Seating Planner (Created by UtsavMitra):**\nOur dedicated layout manager (\`/seating\`) lets you configure guest comfort:\n- **Table Arrangements:** Round banquet tables, royal floor diwans, and theatre rows.\n- **VIP Guest Mapping:** Assign specific guests and family elders to designated tables.\n- **Dietary Synced:** Automatically see Satvik, Jain, and Pure-Veg guest counts per table.`;
+        }
+        // 4. Inquiries about QR Gate Passes & Entry Scanner
+        if (q.includes('qr') || q.includes('pass') || q.includes('scanner') || q.includes('gate') || q.includes('checkin') || q.includes('check-in')) {
+            return `🎟️ **Cryptographic QR Gate Passes & Scanner (Created by UtsavMitra):**\n- **Digital E-Invitations:** Generate cultural Sanskrit invitations with personalized HMAC signed QR codes.\n- **Webcam / Camera Gate Scanner (\`/scanner\`):** Real-time check-in using any phone or laptop camera.\n- **Anti-Duplicate Security:** Prevents duplicate pass re-use and alerts gate security instantly.\n- **Arrival Notifications:** Real-time guest attendance synced to your event command center.`;
+        }
+        // 5. Inquiries about Budgets & Escrow
+        if (q.includes('budget') || q.includes('cost') || q.includes('money') || q.includes('price') || q.includes('lakh')) {
             if (eventContext && eventContext.budget) {
                 const spent = eventContext.spentBudget || 0;
                 const remaining = eventContext.budget - spent;
-                return `📊 **Budget Overview for "${eventContext.name || 'Your Event'}":**\n- **Total Budget:** ₹${eventContext.budget.toLocaleString('en-IN')}\n- **Spent / Committed:** ₹${spent.toLocaleString('en-IN')} (${((spent / eventContext.budget) * 100).toFixed(1)}%)\n- **Remaining Balance:** ₹${remaining.toLocaleString('en-IN')}\n\n💡 *Tip:* Maintain at least 5% contingency for last-minute guest additions!`;
+                return `📊 **UtsavMitra Budget Optimizer for "${eventContext.name || 'Your Celebration'}":**\n- **Allocated Budget:** ₹${eventContext.budget.toLocaleString('en-IN')}\n- **Committed:** ₹${spent.toLocaleString('en-IN')} (${((spent / eventContext.budget) * 100).toFixed(1)}%)\n- **Balance Available:** ₹${remaining.toLocaleString('en-IN')}\n\n💡 *UtsavMitra Protection:* All vendor payments are held in Razorpay Escrow until milestone completion!`;
             }
-            return 'Please specify your event budget, and I will calculate your remaining amount and suggested vendor allocations!';
+            return `💰 **UtsavMitra Budget Management:**\nOur platform provides AI-driven dynamic budget distribution:\n- **Venue:** 35% | **Catering:** 30% | **Decor:** 15% | **Photography & Music:** 12% | **Invites & Buffer:** 8%\n- **Razorpay Escrow:** Complete payment security with milestone-based vendor payouts and instant GST invoices.`;
         }
-        if (q.includes('reduce') && (q.includes('cost') || q.includes('budget') || q.includes('decoration'))) {
-            return `✨ **Smart Ways to Optimize Costs without sacrificing grandeur:**\n1. **Floral Selection:** Combine local marigolds, mogra, and banana stems instead of imported orchids/tulips for a rich authentic traditional look at 40% less cost.\n2. **Lighting Over Physical Props:** Rich amber architectural LED uplighting and fairy light canopies create royal drama at a fraction of heavy wooden backdrop costs.\n3. **Catering Live Counters:** Limit live food stations to 3 curated crowd favorites (e.g., Royal Chaat, Live Jalebi-Rabri, Dosa bar) to eliminate food wastage.\n4. **Digital QR Invitations:** Use UtsavMitra\'s digital invitation studio with WhatsApp delivery and instant RSVP tracking.`;
-        }
-        if (q.includes('venue') && (q.includes('suggest') || q.includes('recommend') || q.includes('under') || q.includes('find'))) {
+        // 6. Inquiries about Venues & Forts
+        if (q.includes('venue') || q.includes('palace') || q.includes('fort') || q.includes('hall') || q.includes('resort')) {
             const city = eventContext?.city || 'Jaipur';
-            return `🏰 **Curated Venues in ${city}:**\n1. **The Heritage Palace Lawns (${city})** — Capacity: 500 | Rating: 4.9⭐ | Features: Indoor AC Banquet + Heritage Courtyard.\n2. **Saffron Bloom Luxury Banquets** — Capacity: 350 | Rating: 4.8⭐ | Features: Valet parking, in-house catering, bridal suites.\n3. **Vedic Courtyard Garden** — Capacity: 250 | Rating: 4.7⭐ | Perfect for traditional rituals, mandap ceremonies, and open-air receptions.\n\n*Would you like me to check real-time availability or launch the map locator?*`;
+            return `🏰 **Heritage Venues & Forts on UtsavMitra (\`/venues\`):**\n- **Curated Heritage Properties in ${city}:** Royal palaces, fort courtyards, luxury AC banquets, and open-air lawns.\n- **Filter by Policy:** Pure Veg Only, External Catering Allowed, Capacity (100 to 2,000+ guests).\n- **Map Discovery:** Geolocation locator to find verified banquet halls near your location.`;
         }
-        if (q.includes('schedule') || q.includes('timeline') || q.includes('2-day') || q.includes('itinerary')) {
-            return `📅 **Recommended 2-Day Indian Celebration Itinerary:**\n\n**Day 1 (Joy & Festivities):**\n- **10:00 AM:** Haldi & Chuda Ceremony (Yellow floral decor & live dhol)\n- **01:00 PM:** Traditional Festive Luncheon\n- **05:30 PM:** High-Tea & Henna / Mehndi Lounge\n- **07:30 PM:** Sangeet Night, Family Choreographies & DJ\n\n**Day 2 (Auspicious Rituals & Gala):**\n- **09:30 AM:** Auspicious Puja & Ganesh Sthapana\n- **11:00 AM:** Royal Baraat & Varmala Exchange\n- **12:30 PM:** Sacred Phere / Muhurtham under Mandap\n- **02:00 PM:** Grand Traditional Feast\n- **07:00 PM:** Reception Gala & Live Musical Ensemble`;
+        // 7. Inquiries about Regional Feasts & Catering
+        if (q.includes('menu') || q.includes('food') || q.includes('catering') || q.includes('feast') || q.includes('satvik') || q.includes('jain')) {
+            const tradition = eventContext?.culturalTradition || 'Rajasthani';
+            const meta = constants_1.CULTURAL_THEMES_METADATA[tradition] || constants_1.CULTURAL_THEMES_METADATA['Rajasthani'];
+            return `🍲 **Regional Gastronomy & Catering on UtsavMitra (\`/catering\`):**\n- **Authentic Cuisines:** ${tradition} Royal Feast, South Indian Banana Leaf Sadya, Punjabi Shahi Dawat, Gujarati Thali, and Bengali Bhoj.\n- **Specialty Delicacies:** ${meta.specialDishes.join(', ')}\n- **Live Counters:** Live Jalebi & Rabri Bar, Royal Chaat Station, Wood-fired kulhad chai.\n- **Dietary Precision:** Dedicated counters for 100% Jain Satvik & Pure Vegetarian headcounts.`;
         }
-        if (q.includes('menu') || q.includes('food') || q.includes('catering')) {
-            const tradition = eventContext?.culturalTradition || 'North Indian';
-            const meta = constants_1.CULTURAL_THEMES_METADATA[tradition] || constants_1.CULTURAL_THEMES_METADATA['North Indian'];
-            return `🍲 **Recommended ${tradition} Feast Menu (${eventContext?.guestCount || 300} Guests):**\n\n- **Welcome Drinks:** Kesar Badam Milk, Kokum Sherbet, Tender Coconut Water\n- **Live Starters:** Paneer Malai Tikka, Crispy Corn Chaat, Cocktail Samosas\n- **Main Course Highlights:** ${meta.specialDishes.slice(0, 3).join(', ')}, Dal Makhani / Sambar, Assorted Naans & Basmati Pulao\n- **Desserts:** ${meta.specialDishes.slice(3).join(', ')}, Artisanal Gulab Jamun with Kulfi\n\n*Estimated cost: ₹750 – ₹1,100 per plate.*`;
+        // 8. Inquiries about Traditions & Rituals
+        if (q.includes('tradition') || q.includes('wedding') || q.includes('muhurtham') || q.includes('ritual') || q.includes('schedule') || q.includes('puja')) {
+            return `🪔 **Indian Cultural Traditions Supported on UtsavMitra:**\nWe support 12 distinct regional celebration traditions with pre-configured Vedic milestones:\n- **Rajasthani / Marwari:** Ganpati Sthapana, Mayra, Sangeet, Royal Baraat, Phere.\n- **South Indian:** Muhurtham, Kasi Yatra, Kanyadanam, Mangalya Dharanam, Sadya.\n- **Punjabi / Sikh:** Roka, Chunni, Mehndi, Sangeet, Anand Karaj.\n- **Gujarati, Bengali, Marathi, Telugu, Tamil, Kannada, Malayali:** Custom ritual checklists and regional vendor pairing.`;
         }
-        return `Namaste! I am **Utsav AI**, your dedicated Indian Event Planning Copilot. I can assist you with:\n\n- 🎨 Selecting cultural decor, mandap styles, and color palettes\n- 💰 Optimizing your budget and alerting you to vendor overruns\n- 🍽️ Customizing regional catering menus (South Indian, Rajasthani, Gujarati, etc.)\n- ⏱️ Structuring ceremony timelines and coordinating live event check-ins\n- 📍 Recommending the best heritage and modern venues\n\nWhat would you like assistance with today?`;
+        // 9. Strict Out-of-Scope Fallback (Politely declines general or outside topics)
+        const isEventRelated = [
+            'event', 'wedding', 'party', 'celebration', 'guest', 'decor', 'photo', 'camera',
+            'music', 'dhol', 'shehnai', 'invite', 'host', 'organizer', 'admin', 'login', 'create'
+        ].some((w) => q.includes(w));
+        if (isEventRelated) {
+            return `Namaste! 🙏 I am **Utsav AI** (powered by Grok), your dedicated cultural planning copilot on **UtsavMitra**.\n\nI can assist you with everything this website creates:\n- 📅 Designing ceremony timelines & checklists\n- 🎨 Building 2D Mandap and stage layouts (\`/mandap-builder\`)\n- 🪑 Configuring royal banquet seating (\`/seating\`)\n- 🏰 Finding heritage venues across Indian cities (\`/venues\`)\n- 🍲 Customizing regional catering menus (\`/catering\`)\n- 🎟️ Generating signed QR gate entry passes (\`/scanner\`)\n\nWhat would you like to configure for your celebration?`;
+        }
+        // Explicitly non-UtsavMitra topic
+        return `Namaste! 🙏 I am **Utsav AI** (powered by Grok), specialized exclusively in **UtsavMitra** — India's premier AI-powered cultural event planning platform.\n\nI can only assist you with what this website creates: traditional celebration planning, 2D mandap blueprints, regional feasts, seating layouts, heritage venues, and QR entry passes.\n\nHow can I help you organize your celebration on UtsavMitra today?`;
     }
     static generateCustomTimeline(eventType, tradition) {
         if (eventType === 'Wedding') {

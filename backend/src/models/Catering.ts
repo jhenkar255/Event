@@ -1,5 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
-import { ICateringPackage } from '../../../shared/types';
+import { ICateringPackage } from '../shared/types';
 
 export interface ICateringDocument extends Omit<ICateringPackage, '_id'>, Document {}
 

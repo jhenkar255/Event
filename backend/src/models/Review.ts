@@ -1,5 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
-import { IReview } from '../../../shared/types';
+import { IReview } from '../shared/types';
 
 export interface IReviewDocument extends Omit<IReview, '_id'>, Document {}
 

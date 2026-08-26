@@ -1,6 +1,10 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.updateChecklist = exports.deleteEvent = exports.updateEvent = exports.getEventById = exports.createEvent = exports.getEvents = void 0;
+const mongoose_1 = __importDefault(require("mongoose"));
 const Event_1 = require("../models/Event");
 const Guest_1 = require("../models/Guest");
 const Payment_1 = require("../models/Payment");
@@ -9,7 +13,7 @@ const EventSchedule_1 = require("../models/EventSchedule");
 const EventDesign_1 = require("../models/EventDesign");
 const SeatingLayout_1 = require("../models/SeatingLayout");
 const Invitation_1 = require("../models/Invitation");
-const constants_1 = require("../../../shared/constants");
+const constants_1 = require("../shared/constants");
 const socketService_1 = require("../services/socketService");
 const getEvents = async (req, res) => {
     try {
@@ -42,6 +46,8 @@ const createEvent = async (req, res) => {
     try {
         const eventData = {
             ...req.body,
+            type: req.body.type || req.body.eventType || 'Wedding',
+            venue: req.body.venue || req.body.venueId || undefined,
             createdBy: req.user?.id,
         };
         // Auto-generate checklist items based on event type if not provided
@@ -93,17 +99,18 @@ const createEvent = async (req, res) => {
             totalSeats: 32,
             assignedSeats: 0,
         });
+        const inviteData = req.body.invitation || {};
         await Invitation_1.Invitation.create({
             eventId: event._id,
             templateId: 'royal-rajasthani',
-            title: event.name,
-            hostNames: 'The Family Cordially Invites You',
+            title: inviteData.title || event.name,
+            hostNames: inviteData.hostNames || 'The Family Cordially Invites You',
             eventDate: event.date,
             eventTime: event.startTime || '10:00 AM',
             venueName: event.location.address,
             venueAddress: `${event.location.city}, ${event.location.state}`,
-            customMessage: 'We request the honour of your auspicious presence and blessings as we celebrate this joyous milestone.',
-            shlokaOrQuote: 'सर्वमङ्गलमाङ्गल्ये शिवे सर्वार्थसाधिके | शरण्ये त्र्यम्बके गौरि नारायणि नमोऽस्तु ते',
+            customMessage: inviteData.customMessage || 'We request the honour of your auspicious presence and blessings as we celebrate this joyous milestone.',
+            shlokaOrQuote: inviteData.shlokaOrQuote || 'सर्वमङ्गलमाङ्गल्ये शिवे सर्वार्थसाधिके | शरण्ये त्र्यम्बके गौरि नारायणि नमोऽस्तु ते',
             themeColor: '#7A1F2B',
         });
         res.status(201).json({
@@ -120,17 +127,33 @@ exports.createEvent = createEvent;
 const getEventById = async (req, res) => {
     try {
         const { id } = req.params;
-        const event = await Event_1.Event.findById(id).populate('venue').populate('createdBy', 'name email phone');
+        let event = null;
+        if (id && mongoose_1.default.Types.ObjectId.isValid(id)) {
+            event = await Event_1.Event.findById(id).populate('venue').populate('createdBy', 'name email phone');
+        }
+        if (!event && id) {
+            event = await Event_1.Event.findOne({ eventId: id }).populate('venue').populate('createdBy', 'name email phone');
+        }
+        // Fallback: If id is 'demo' or event wasn't found, find the latest seeded / created event
         if (!event) {
-            res.status(404).json({ success: false, message: 'Event not found.' });
+            event = await Event_1.Event.findOne().sort({ createdAt: -1 }).populate('venue').populate('createdBy', 'name email phone');
+        }
+        if (!event) {
+            res.status(404).json({ success: false, message: 'Celebration event not found in database.' });
             return;
+        }
+        // Populate invitation if available
+        const invitation = await Invitation_1.Invitation.findOne({ eventId: event._id });
+        const eventObj = event.toObject ? event.toObject() : { ...event };
+        if (invitation) {
+            eventObj.invitation = invitation;
         }
         // Compute live event stats
         const totalGuests = await Guest_1.Guest.countDocuments({ eventId: event._id });
         const acceptedRSVP = await Guest_1.Guest.countDocuments({ eventId: event._id, rsvpStatus: 'ACCEPTED' });
         const checkedInGuests = await Guest_1.Guest.countDocuments({ eventId: event._id, checkInStatus: true });
         const payments = await Payment_1.Payment.find({ eventId: event._id, status: 'SUCCESS' });
-        const totalSpent = payments.reduce((acc, p) => acc + p.totalAmount, 0);
+        const totalSpent = payments.reduce((acc, p) => acc + (p.totalAmount || p.amount || 0), 0);
         // Compute dynamic risk alerts
         const alerts = [];
         if (totalSpent > event.budget) {
@@ -153,7 +176,7 @@ const getEventById = async (req, res) => {
         }
         res.json({
             success: true,
-            event,
+            event: eventObj,
             stats: {
                 totalGuests,
                 acceptedRSVP,

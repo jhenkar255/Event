@@ -3,8 +3,8 @@ import {
   IAIEventPlanResponse,
   CulturalTradition,
   EventType,
-} from '../../../shared/types';
-import { CULTURAL_THEMES_METADATA, DEFAULT_BUDGET_RATIOS } from '../../../shared/constants';
+} from '../shared/types';
+import { CULTURAL_THEMES_METADATA, DEFAULT_BUDGET_RATIOS } from '../shared/constants';
 
 export class AIService {
   /**

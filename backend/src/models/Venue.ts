@@ -1,5 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
-import { IVenue } from '../../../shared/types';
+import { IVenue } from '../shared/types';
 
 export interface IVenueDocument extends Omit<IVenue, '_id'>, Document {}
 
