@@ -21,8 +21,8 @@ export const InvoiceReceiptModal: React.FC<InvoiceReceiptModalProps> = ({ isOpen
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white text-gray-900 w-full max-w-2xl rounded-3xl shadow-2xl border-2 border-utsav-gold/60 overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white text-gray-900 w-full max-w-2xl rounded-3xl shadow-2xl border-2 border-utsav-gold/60 overflow-hidden flex flex-col max-h-[90vh] relative z-[10000]">
         {/* Top Control Bar */}
         <div className="p-4 bg-utsav-maroon-950 text-utsav-ivory flex items-center justify-between border-b border-utsav-gold/40">
           <div className="flex items-center space-x-2">

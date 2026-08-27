@@ -679,8 +679,8 @@ export const EventWizardPage: React.FC = () => {
     <div ref={wizardContainerRef} className="max-w-5xl mx-auto px-4 py-8 space-y-8 scroll-mt-28">
       {/* Modal for detailed menu view */}
       {viewingMenuCat && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="bg-utsav-ivory dark:bg-utsav-maroon-950 w-full max-w-2xl rounded-3xl shadow-2xl border-2 border-utsav-gold/60 overflow-hidden flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="bg-utsav-ivory dark:bg-utsav-maroon-950 w-full max-w-2xl rounded-3xl shadow-2xl border-2 border-utsav-gold/60 overflow-hidden flex flex-col max-h-[90vh] relative z-[10000]">
             <div className="p-6 bg-gradient-to-r from-utsav-maroon-900 to-utsav-maroon-800 text-utsav-ivory border-b border-utsav-gold/40 flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className="p-2 rounded-xl bg-utsav-maroon-950 border border-utsav-gold">

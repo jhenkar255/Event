@@ -162,10 +162,28 @@
   background: #F4A340;
 }
 
-/* Leaflet Map overrides for Indian theme */
+/* Leaflet Map overrides for Indian theme & Stacking Isolation */
 .leaflet-container {
   font-family: 'Plus Jakarta Sans', sans-serif !important;
   border-radius: 0.75rem;
+  z-index: 0 !important;
+  isolation: isolate !important;
+}
+
+.leaflet-pane,
+.leaflet-tile-pane,
+.leaflet-overlay-pane,
+.leaflet-shadow-pane,
+.leaflet-marker-pane,
+.leaflet-tooltip-pane,
+.leaflet-popup-pane {
+  z-index: 1 !important;
+}
+
+.leaflet-top,
+.leaflet-bottom,
+.leaflet-control {
+  z-index: 2 !important;
 }
 
 .leaflet-popup-content-wrapper {

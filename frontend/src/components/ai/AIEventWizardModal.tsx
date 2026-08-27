@@ -52,8 +52,8 @@ export const AIEventWizardModal: React.FC<AIEventWizardModalProps> = ({ isOpen, 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-utsav-ivory dark:bg-utsav-maroon-950 w-full max-w-xl rounded-3xl shadow-2xl border-2 border-utsav-gold/60 overflow-hidden">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-utsav-ivory dark:bg-utsav-maroon-950 w-full max-w-xl rounded-3xl shadow-2xl border-2 border-utsav-gold/60 overflow-hidden relative z-[10000]">
         {/* Header */}
         <div className="p-6 bg-gradient-to-r from-utsav-maroon-900 to-utsav-maroon-800 text-utsav-ivory border-b border-utsav-gold/40 flex items-center justify-between">
           <div className="flex items-center space-x-3">

@@ -58,7 +58,7 @@ export const VenueMap: React.FC<VenueMapProps> = ({
       : center;
 
   return (
-    <div className={`relative rounded-3xl overflow-hidden border-2 border-utsav-gold/40 shadow-xl ${className}`}>
+    <div className={`relative z-0 isolate rounded-3xl overflow-hidden border-2 border-utsav-gold/40 shadow-xl ${className}`}>
       <MapContainer
         center={mapCenter}
         zoom={venues.length === 1 ? 13 : zoom}
