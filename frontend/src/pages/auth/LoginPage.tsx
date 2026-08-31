@@ -19,13 +19,14 @@ import {
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, googleLogin, isLoading } = useAuth();
+  const { login, googleLogin } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -78,14 +79,14 @@ export const LoginPage: React.FC = () => {
     setError(null);
     setSuccessMessage(null);
 
-    const trimmedEmail = email.trim();
+    const trimmedEmail = email.trim().toLowerCase();
     if (!trimmedEmail) {
-      setError('Please enter your email.');
+      setError('Please enter your email address.');
       return;
     }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!emailRegex.test(trimmedEmail)) {
-      setError('Please enter a valid email address.');
+      setError('Please enter a valid email address (e.g. name@example.com).');
       return;
     }
     if (!password) {
@@ -93,14 +94,17 @@ export const LoginPage: React.FC = () => {
       return;
     }
 
+    setIsSubmitting(true);
     try {
       // Authenticate against database via backend
       const authUser = await login(trimmedEmail, password, rememberMe);
       handleAuthSuccess(authUser);
     } catch (err: any) {
-      // Clear password on error and show security error message
+      // Clear password on error and show clear error message
       setPassword('');
-      setError(err.message || 'Invalid email or password');
+      setError(err.message || 'Invalid email or password. Please verify your credentials or register.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -267,11 +271,11 @@ export const LoginPage: React.FC = () => {
           {/* Login Submit Button */}
           <button
             type="submit"
-            disabled={isLoading || !!successMessage}
+            disabled={isSubmitting || !!successMessage}
             className="w-full py-3.5 rounded-xl maroon-gradient-btn font-bold text-sm shadow-xl flex items-center justify-center space-x-2 disabled:opacity-50 hover:scale-[1.01] transition-transform text-utsav-gold cursor-pointer"
           >
             <LogIn className="w-4 h-4" />
-            <span>{isLoading ? 'Authenticating...' : 'Sign In'}</span>
+            <span>{isSubmitting ? 'Authenticating...' : 'Sign In'}</span>
           </button>
         </form>
 

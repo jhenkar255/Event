@@ -16,11 +16,12 @@ import {
 
 export const AdminLoginPage: React.FC = () => {
   const navigate = useNavigate();
-  const { adminLogin, isLoading } = useAuth();
+  const { adminLogin } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -29,14 +30,14 @@ export const AdminLoginPage: React.FC = () => {
     setError(null);
     setSuccessMessage(null);
 
-    const trimmedEmail = email.trim();
+    const trimmedEmail = email.trim().toLowerCase();
     if (!trimmedEmail) {
-      setError('Please enter your email.');
+      setError('Please enter your administrator email.');
       return;
     }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!emailRegex.test(trimmedEmail)) {
-      setError('Please enter a valid email address.');
+      setError('Please enter a valid email address (e.g. admin@utsavmitra.com).');
       return;
     }
     if (!password) {
@@ -44,6 +45,7 @@ export const AdminLoginPage: React.FC = () => {
       return;
     }
 
+    setIsSubmitting(true);
     try {
       const adminUser = await adminLogin(trimmedEmail, password);
       setSuccessMessage(`Admin authenticated: Welcome, ${adminUser.name}!`);
@@ -53,7 +55,9 @@ export const AdminLoginPage: React.FC = () => {
       }, 500);
     } catch (err: any) {
       setPassword('');
-      setError(err.message || 'Invalid email or password');
+      setError(err.message || 'Invalid administrator email or password.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -168,11 +172,11 @@ export const AdminLoginPage: React.FC = () => {
           {/* Secure Admin Login Button */}
           <button
             type="submit"
-            disabled={isLoading || !!successMessage}
+            disabled={isSubmitting || !!successMessage}
             className="w-full py-3.5 rounded-xl bg-gradient-to-r from-red-800 via-utsav-maroon-800 to-red-900 hover:from-red-700 hover:to-red-800 text-amber-300 border-2 border-amber-400/70 font-bold text-sm shadow-2xl flex items-center justify-center space-x-2 disabled:opacity-50 hover:scale-[1.01] transition-all cursor-pointer tracking-wider uppercase"
           >
             <Shield className="w-4 h-4 text-amber-400" />
-            <span>{isLoading ? 'Authenticating...' : 'Secure Login'}</span>
+            <span>{isSubmitting ? 'Authenticating...' : 'Secure Login'}</span>
           </button>
         </form>
 
