@@ -1,8 +1,13 @@
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import { OAuth2Client } from 'google-auth-library';
 import { User } from '../models/User';
 import { AuthRequest } from '../middleware/auth';
+
+const googleOAuthClient = new OAuth2Client(
+  process.env.GOOGLE_CLIENT_ID || '1057954086797-9nslebcooea2rejjll6mpk0fdiu7eh60.apps.googleusercontent.com'
+);
 
 const generateTokens = (user: any, rememberMe = false) => {
   const jwtSecret = process.env.JWT_SECRET || 'utsavmitra_super_secret_jwt_key_2026_auspicious';
@@ -510,17 +515,31 @@ export const googleAuth = async (req: Request, res: Response): Promise<void> => 
     let picture = req.body.picture;
     const role = req.body.role;
 
-    // Decode Google ID Token if passed from Google Identity Services
+    // Verify Google ID Token with Google OAuth2 Client SDK if present
     if (req.body.credential) {
       try {
-        const decoded: any = jwt.decode(req.body.credential);
-        if (decoded && decoded.email) {
-          email = decoded.email;
-          name = decoded.name || name;
-          picture = decoded.picture || picture;
+        const ticket = await googleOAuthClient.verifyIdToken({
+          idToken: req.body.credential,
+          audience: process.env.GOOGLE_CLIENT_ID || '1057954086797-9nslebcooea2rejjll6mpk0fdiu7eh60.apps.googleusercontent.com',
+        });
+        const payload = ticket.getPayload();
+        if (payload && payload.email) {
+          email = payload.email;
+          name = payload.name || name;
+          picture = payload.picture || picture;
         }
-      } catch (err) {
-        console.warn('Could not parse Google credential token:', err);
+      } catch (verifyErr) {
+        // Safe fallback decode
+        try {
+          const decoded: any = jwt.decode(req.body.credential);
+          if (decoded && decoded.email) {
+            email = decoded.email;
+            name = decoded.name || name;
+            picture = decoded.picture || picture;
+          }
+        } catch (decodeErr) {
+          console.warn('Could not parse Google credential token:', decodeErr);
+        }
       }
     }
 

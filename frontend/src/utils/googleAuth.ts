@@ -1,7 +1,8 @@
-/**
- * UtsavMitra Google Cloud Console OAuth 2.0 Client Utility
- * Integrates Google Identity Services (GSI) OAuth2 Token & ID Client
- */
+declare global {
+  interface Window {
+    google?: any;
+  }
+}
 
 export const GOOGLE_CLIENT_ID =
   import.meta.env.VITE_GOOGLE_CLIENT_ID ||
