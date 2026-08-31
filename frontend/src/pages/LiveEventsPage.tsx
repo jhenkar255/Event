@@ -19,8 +19,10 @@ import {
   CheckCircle2,
   ExternalLink,
   PlusCircle,
-  Link as LinkIcon,
-  Laptop,
+  Video,
+  Compass,
+  ArrowRight,
+  Tv,
 } from 'lucide-react';
 import { DiyaIcon, MandalaCorner } from '../components/layout/IndianMotifs';
 import confetti from 'canvas-confetti';
@@ -43,25 +45,6 @@ interface LiveEventItem {
 
 const LIVE_EVENTS_CATALOG: LiveEventItem[] = [
   {
-    id: 'live-tech-1',
-    title: 'TechMeet & AI Developer Summit 2026 – Keynote & Hackathon Live',
-    tradition: 'Custom / Modern',
-    type: 'Tech Meet & Hackathon',
-    location: 'Electronic City Innovation Arena',
-    city: 'Bangalore, Karnataka',
-    hostName: 'TechMitra Developer Community',
-    viewers: 1420,
-    youtubeId: 'L_LUpnjgPso',
-    status: 'LIVE',
-    scheduleTime: 'Active Now (AI Keynote & Live Hackathon)',
-    description: 'Live broadcast of the developer keynote, tech talks, AI architecture demos, and 24-hr code sprint from Bangalore.',
-    cameras: [
-      { name: 'Main Tech Stage (Cam 1)', youtubeId: 'L_LUpnjgPso' },
-      { name: 'Hackathon Coding Arena (Cam 2)', youtubeId: 'M7lc1UVf-VE' },
-      { name: 'Startup Demo Floor (Cam 3)', youtubeId: 'LXb3EKWsInQ' },
-    ],
-  },
-  {
     id: 'live-1',
     title: 'Royal Rajasthani Palace Wedding & Saat Phere – Aarav & Ananya',
     tradition: 'Rajasthani',
@@ -69,15 +52,33 @@ const LIVE_EVENTS_CATALOG: LiveEventItem[] = [
     location: 'Amber Heritage Palace & Courtyard',
     city: 'Jaipur, Rajasthan',
     hostName: 'Sharma & Rathore Royal Family',
-    viewers: 584,
-    youtubeId: 'rUWxSEwctFU',
+    viewers: 284,
+    youtubeId: '09R8_2nJtjg',
     status: 'LIVE',
     scheduleTime: 'Active Now (Muhurtham: 10:30 AM)',
     description: 'Live broadcast of the sacred Saat Phere, Vedic Agni Kund rituals, and royal Swagat in 1080p Ultra HD.',
     cameras: [
-      { name: 'Mandap Live Feed (Cam 1)', youtubeId: 'rUWxSEwctFU' },
-      { name: 'Baraat & Swagat (Cam 2)', youtubeId: 'EngW7tLk6R8' },
-      { name: 'Varmala Stage (Cam 3)', youtubeId: 'LXb3EKWsInQ' },
+      { name: 'Mandap Live Feed (Cam 1)', youtubeId: '09R8_2nJtjg' },
+      { name: 'Baraat & Swagat (Cam 2)', youtubeId: 'L_LUpnjgPso' },
+      { name: 'Varmala Stage (Cam 3)', youtubeId: '2Vv-BfVoq4g' },
+    ],
+  },
+  {
+    id: 'live-tech',
+    title: 'TechMeet & AI Innovation Conclave 2026 – Keynote & Live Hackathon',
+    tradition: 'Custom',
+    type: 'Tech Meet & Hackathon',
+    location: 'Electronic City Innovation Center',
+    city: 'Bangalore, Karnataka',
+    hostName: 'UtsavMitra Tech Developer Community',
+    viewers: 412,
+    youtubeId: 'M7lc1UVf-VE',
+    status: 'LIVE',
+    scheduleTime: 'Active Now (Keynote & Demos)',
+    description: 'Live developer hackathon demo streams, AI keynote talks, and founder networking sessions.',
+    cameras: [
+      { name: 'Main Keynote Hall', youtubeId: 'M7lc1UVf-VE' },
+      { name: 'Hackathon Demo Stage', youtubeId: '09R8_2nJtjg' },
     ],
   },
   {
@@ -88,14 +89,14 @@ const LIVE_EVENTS_CATALOG: LiveEventItem[] = [
     location: 'Dakshin Vedic Heritage Pavilion',
     city: 'Bangalore, Karnataka',
     hostName: 'Iyer & Sundaram Family',
-    viewers: 396,
-    youtubeId: 'EngW7tLk6R8',
+    viewers: 196,
+    youtubeId: 'L_LUpnjgPso',
     status: 'LIVE',
     scheduleTime: 'Active Now (Kanyadaanam Rites)',
     description: 'Auspicious Nadaswaram, Mangalya Dharanam, and holy Vedic mantras chanted by senior temple scholars.',
     cameras: [
-      { name: 'Main Temple Stage', youtubeId: 'EngW7tLk6R8' },
-      { name: 'Traditional Nadhaswaram Crew', youtubeId: 'rUWxSEwctFU' },
+      { name: 'Main Temple Stage', youtubeId: 'L_LUpnjgPso' },
+      { name: 'Traditional Nadhaswaram Crew', youtubeId: '09R8_2nJtjg' },
     ],
   },
   {
@@ -106,8 +107,8 @@ const LIVE_EVENTS_CATALOG: LiveEventItem[] = [
     location: 'Regal Saffron Lawns & Glass Ballroom',
     city: 'Delhi NCR',
     hostName: 'Grewal & Dhillon Family',
-    viewers: 342,
-    youtubeId: 'LXb3EKWsInQ',
+    viewers: 142,
+    youtubeId: '9bZkp7q19f0',
     status: 'LIVE',
     scheduleTime: 'Active Now (Sangeet Performances)',
     description: 'High-energy live Bhangra troupe, celebrity DJ, and royal family performances streaming live.',
@@ -120,11 +121,56 @@ const LIVE_EVENTS_CATALOG: LiveEventItem[] = [
     location: 'Vaikuntha Villa, Heritage Enclave',
     city: 'Ahmedabad, Gujarat',
     hostName: 'Patel Parivar',
-    viewers: 189,
-    youtubeId: 'EngW7tLk6R8',
+    viewers: 89,
+    youtubeId: 'kJQP7kiw5Fk',
     status: 'LIVE',
     scheduleTime: 'Active Now (Purnahuti Muhurtham)',
     description: 'Sacred Havan, Vastu Shanti mantras, and family blessings broadcast for relatives abroad.',
+  },
+  {
+    id: 'live-5',
+    title: 'Ganga Maha Aarti & Dev Deepavali Vedic Chants',
+    tradition: 'Vedic Heritage',
+    type: 'Cultural Aarti',
+    location: 'Dashashwamedh Ghat',
+    city: 'Varanasi, Uttar Pradesh',
+    hostName: 'Ganga Seva Nidhi',
+    viewers: 620,
+    youtubeId: 'fJ9rUzIMcZQ',
+    status: 'LIVE',
+    scheduleTime: 'Active Now (Sunset Aarti)',
+    description: 'Mesmerizing evening Maha Aarti with 108 brass lamps and sacred conch blowing.',
+  },
+];
+
+const RELATED_YOUTUBE_VIDEOS = [
+  {
+    id: 'rel-1',
+    title: 'Grand Indian Royal Wedding Film & Celebrations (4K)',
+    channel: 'Heritage Cinematic Films',
+    youtubeId: 'L_LUpnjgPso',
+    tag: 'Wedding Film',
+  },
+  {
+    id: 'rel-2',
+    title: 'Tech Summit & Developer Keynote Live Stream',
+    channel: 'Google Developers & Tech Hub',
+    youtubeId: 'M7lc1UVf-VE',
+    tag: 'Tech Keynote',
+  },
+  {
+    id: 'rel-3',
+    title: 'Surprise Grand Wedding Celebration Live',
+    channel: 'Maroon 5 Celebrations',
+    youtubeId: '09R8_2nJtjg',
+    tag: 'Celebration',
+  },
+  {
+    id: 'rel-4',
+    title: 'High Energy Bollywood Sangeet & Dance Festival',
+    channel: 'Dance & Beats India',
+    youtubeId: '9bZkp7q19f0',
+    tag: 'Sangeet Night',
   },
 ];
 
@@ -134,8 +180,7 @@ export const LiveEventsPage: React.FC = () => {
   const [currentYoutubeId, setCurrentYoutubeId] = useState<string>(LIVE_EVENTS_CATALOG[0].youtubeId);
   const [activeCamIndex, setActiveCamIndex] = useState(0);
 
-  // Custom Quick Input Stream URL
-  const [quickInputUrl, setQuickInputUrl] = useState('');
+  // Custom Stream URL input
   const [customUrl, setCustomUrl] = useState('');
   const [isAddingStream, setIsAddingStream] = useState(false);
 
@@ -147,22 +192,6 @@ export const LiveEventsPage: React.FC = () => {
   ]);
   const [newBlessingText, setNewBlessingText] = useState('');
   const [viewerName, setViewerName] = useState('');
-
-  const extractYoutubeId = (urlOrId: string): string => {
-    const trimmed = urlOrId.trim();
-    if (!trimmed) return 'L_LUpnjgPso';
-
-    // Matches youtube.com/watch?v=ID, youtu.be/ID, youtube.com/live/ID, youtube.com/embed/ID, etc.
-    const match = trimmed.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|live)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
-    if (match && match[1]) {
-      return match[1];
-    }
-    // Direct 11 character ID
-    if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) {
-      return trimmed;
-    }
-    return 'L_LUpnjgPso';
-  };
 
   const handleSelectEvent = (eventItem: LiveEventItem) => {
     setSelectedEvent(eventItem);
@@ -176,27 +205,16 @@ export const LiveEventsPage: React.FC = () => {
     setCurrentYoutubeId(cam.youtubeId);
   };
 
-  const handleQuickLinkSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!quickInputUrl.trim()) return;
-
-    const parsedId = extractYoutubeId(quickInputUrl);
-    setCurrentYoutubeId(parsedId);
-    setSelectedEvent((prev) => ({
-      ...prev,
-      title: 'Custom YouTube Live Stream Broadcast',
-      youtubeId: parsedId,
-      status: 'LIVE',
-      description: `Broadcasting custom YouTube live video stream (ID: ${parsedId}).`,
-    }));
-    setQuickInputUrl('');
-
-    confetti({
-      particleCount: 50,
-      spread: 60,
-      origin: { y: 0.6 },
-      colors: ['#C9A227', '#F4A340', '#7A1F2B'],
-    });
+  const extractYoutubeId = (urlOrId: string): string => {
+    const trimmed = urlOrId.trim();
+    const matchWatch = trimmed.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
+    if (matchWatch && matchWatch[1]) {
+      return matchWatch[1];
+    }
+    if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) {
+      return trimmed;
+    }
+    return '09R8_2nJtjg';
   };
 
   const handleApplyCustomStream = (e: React.FormEvent) => {
@@ -207,7 +225,7 @@ export const LiveEventsPage: React.FC = () => {
     setCurrentYoutubeId(parsedId);
     setSelectedEvent((prev) => ({
       ...prev,
-      title: 'Custom YouTube Celebration Broadcast',
+      title: 'My Custom Live Celebration Broadcast',
       youtubeId: parsedId,
       status: 'LIVE',
       description: 'Broadcasting custom celebration live stream via YouTube feed.',
@@ -254,7 +272,7 @@ export const LiveEventsPage: React.FC = () => {
     });
   };
 
-  const directYouTubeWatchUrl = `https://www.youtube.com/watch?v=${currentYoutubeId}`;
+  const currentYoutubeWatchUrl = `https://www.youtube.com/watch?v=${currentYoutubeId}`;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-in fade-in duration-200">
@@ -269,9 +287,16 @@ export const LiveEventsPage: React.FC = () => {
         </button>
 
         <div className="flex items-center space-x-2">
-          <span className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-red-600/90 text-white font-bold text-[11px] tracking-wider animate-pulse shadow-md">
+          <Link
+            to="/events"
+            className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-utsav-gold/20 text-utsav-maroon-900 dark:text-utsav-gold font-bold text-xs border border-utsav-gold/40 hover:bg-utsav-gold/30 transition-colors"
+          >
+            <Compass className="w-3.5 h-3.5" />
+            <span>Explore All Events →</span>
+          </Link>
+          <span className="flex items-center space-x-1.5 px-3 py-1 rounded-full bg-red-600 text-white font-bold text-[11px] tracking-wider animate-pulse shadow-md">
             <span className="w-2 h-2 rounded-full bg-white animate-ping" />
-            <span>🔴 LIVE CELEBRATION & TECH BROADCASTS</span>
+            <span>🔴 6 LIVE BROADCASTS ACTIVE</span>
           </span>
         </div>
       </div>
@@ -291,63 +316,41 @@ export const LiveEventsPage: React.FC = () => {
               </span>
             </div>
             <h1 className="font-heading text-2xl sm:text-4xl font-bold tracking-tight gold-gradient-text">
-              Live YouTube Broadcasts & Tech Summits
+              Live Cultural Celebrations & YouTube Broadcasts
             </h1>
             <p className="text-xs sm:text-sm text-utsav-ivory/80 max-w-2xl leading-relaxed">
-              Stream auspicious Indian weddings, TechMeet hackathons, and corporate keynotes live in 1080p Ultra HD. Connect with guests worldwide and link your own YouTube broadcast.
+              Watch auspicious Indian weddings, sacred Vedic rituals, TechMeets, and royal sangeet nights live in 1080p HD. Connect with families worldwide and shower virtual blessings.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
+            <a
+              href={currentYoutubeWatchUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-lg flex items-center space-x-1.5 transition-colors"
+            >
+              <ExternalLink className="w-4 h-4" />
+              <span>▶ Watch on YouTube</span>
+            </a>
+
             <button
               onClick={() => setIsAddingStream(true)}
               className="px-4 py-2.5 rounded-xl gold-gradient-btn text-xs font-bold text-utsav-maroon-950 shadow-lg flex items-center space-x-1.5 cursor-pointer"
             >
               <PlusCircle className="w-4 h-4" />
-              <span>+ Link YouTube Live Video</span>
+              <span>+ Broadcast My YouTube Live</span>
             </button>
 
-            <a
-              href={directYouTubeWatchUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-4 py-2.5 rounded-xl bg-red-600/90 hover:bg-red-600 text-white text-xs font-bold shadow-md flex items-center space-x-1.5"
+            <Link
+              to="/events"
+              className="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-utsav-gold border border-utsav-gold/50 text-xs font-bold shadow-md flex items-center space-x-1.5"
             >
-              <ExternalLink className="w-4 h-4" />
-              <span>Watch on YouTube App</span>
-            </a>
+              <Compass className="w-4 h-4" />
+              <span>Explore Events</span>
+            </Link>
           </div>
         </div>
-      </div>
-
-      {/* Quick Paste YouTube URL Bar */}
-      <div className="p-4 rounded-2xl bg-utsav-ivory dark:bg-utsav-maroon-900 border border-utsav-gold/40 shadow-md">
-        <form onSubmit={handleQuickLinkSubmit} className="flex flex-col sm:flex-row items-center gap-2.5">
-          <div className="flex items-center space-x-2 shrink-0">
-            <LinkIcon className="w-4 h-4 text-utsav-gold" />
-            <span className="text-xs font-bold text-utsav-maroon-800 dark:text-utsav-gold whitespace-nowrap">
-              Play Any YouTube Video / Live URL:
-            </span>
-          </div>
-
-          <div className="relative flex-1 w-full">
-            <input
-              type="text"
-              value={quickInputUrl}
-              onChange={(e) => setQuickInputUrl(e.target.value)}
-              placeholder="Paste YouTube link (e.g. https://www.youtube.com/watch?v=... or https://youtu.be/...)"
-              className="w-full px-3.5 py-2 rounded-xl bg-white dark:bg-utsav-maroon-950 border border-utsav-gold/40 text-xs text-utsav-brown dark:text-utsav-ivory placeholder-gray-400 focus:outline-none focus:border-utsav-gold"
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="w-full sm:w-auto px-4 py-2 rounded-xl maroon-gradient-btn text-utsav-gold text-xs font-bold shadow-md flex items-center justify-center space-x-1.5 cursor-pointer shrink-0"
-          >
-            <Play className="w-3.5 h-3.5 fill-current" />
-            <span>Load & Play Video</span>
-          </button>
-        </form>
       </div>
 
       {/* Modal to input Custom YouTube Live Stream */}
@@ -358,7 +361,7 @@ export const LiveEventsPage: React.FC = () => {
               <div className="flex items-center space-x-2.5">
                 <Radio className="w-5 h-5 text-red-500 animate-pulse" />
                 <h3 className="font-heading text-base font-bold text-utsav-gold">
-                  Broadcast Custom YouTube Live Video
+                  Broadcast YouTube Live Stream
                 </h3>
               </div>
               <button
@@ -379,20 +382,19 @@ export const LiveEventsPage: React.FC = () => {
                   required
                   value={customUrl}
                   onChange={(e) => setCustomUrl(e.target.value)}
-                  placeholder="https://www.youtube.com/watch?v=... or https://youtube.com/live/..."
+                  placeholder="https://www.youtube.com/watch?v=... or Video ID (e.g. 09R8_2nJtjg)"
                   className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-utsav-maroon-900 border border-utsav-gold/40 text-utsav-brown dark:text-utsav-ivory focus:outline-none"
                 />
                 <span className="text-[10px] text-gray-500 mt-1 block">
-                  Paste any public YouTube live stream URL, video link, or 11-digit video ID.
+                  Paste any public or unlisted YouTube live stream URL or video link.
                 </span>
               </div>
 
               <div className="p-3.5 rounded-2xl bg-utsav-beige-100 dark:bg-utsav-maroon-900/80 border border-utsav-gold/30 text-[11px] text-gray-600 dark:text-gray-300 space-y-1">
                 <p className="font-bold text-utsav-saffron">Supported formats:</p>
-                <p>• https://youtube.com/watch?v=L_LUpnjgPso</p>
-                <p>• https://youtu.be/L_LUpnjgPso</p>
-                <p>• https://youtube.com/live/L_LUpnjgPso</p>
-                <p>• Direct Video ID: L_LUpnjgPso</p>
+                <p>• https://youtube.com/watch?v=09R8_2nJtjg</p>
+                <p>• https://youtu.be/09R8_2nJtjg</p>
+                <p>• Direct YouTube Video ID (e.g. 09R8_2nJtjg)</p>
               </div>
 
               <div className="pt-2 flex items-center justify-end space-x-2">
@@ -421,34 +423,15 @@ export const LiveEventsPage: React.FC = () => {
         {/* Main Video Player Container */}
         <div className="lg:col-span-2 space-y-4">
           <div className="p-4 sm:p-5 rounded-3xl bg-utsav-ivory dark:bg-utsav-maroon-900 border-2 border-utsav-gold/50 shadow-2xl space-y-4">
-            {/* Player Frame with Full Compatibility Embed */}
+            {/* Player Frame */}
             <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-black border-2 border-utsav-gold/60 shadow-2xl">
               <iframe
-                key={currentYoutubeId}
-                src={`https://www.youtube.com/embed/${currentYoutubeId}?autoplay=1&mute=0&enablejsapi=1&rel=0&origin=${encodeURIComponent(window.location.origin)}`}
+                src={`https://www.youtube-nocookie.com/embed/${currentYoutubeId}?autoplay=1&mute=1&playsinline=1&enablejsapi=1&rel=0`}
                 title={selectedEvent.title}
                 className="w-full h-full"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 allowFullScreen
               />
-            </div>
-
-            {/* Audio / Watch on YouTube Helpers */}
-            <div className="flex flex-wrap items-center justify-between gap-2 px-1">
-              <div className="flex items-center space-x-2 text-[11px] text-gray-500 dark:text-gray-400">
-                <Volume2 className="w-4 h-4 text-utsav-gold shrink-0" />
-                <span>If video is muted by browser policy, click inside player to unmute audio.</span>
-              </div>
-
-              <a
-                href={directYouTubeWatchUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs font-bold text-red-600 hover:text-red-700 flex items-center space-x-1 cursor-pointer"
-              >
-                <span>Direct Link: Open in YouTube</span>
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
             </div>
 
             {/* Multi-Camera Angle Selector (if available) */}
@@ -494,11 +477,21 @@ export const LiveEventsPage: React.FC = () => {
                 </div>
 
                 <div className="flex items-center space-x-2">
+                  <a
+                    href={currentYoutubeWatchUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-md flex items-center space-x-1.5 transition-colors"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>Open in YouTube</span>
+                  </a>
+
                   <button
                     onClick={handleShowerPetals}
                     className="px-3.5 py-1.5 rounded-xl gold-gradient-btn text-xs font-bold shadow-md flex items-center space-x-1.5 text-utsav-maroon-950 cursor-pointer"
                   >
-                    <span>🌸 Shower Flower Petals</span>
+                    <span>🌸 Shower Petals</span>
                   </button>
                 </div>
               </div>
@@ -533,7 +526,7 @@ export const LiveEventsPage: React.FC = () => {
                 <div className="flex items-center space-x-2">
                   <Heart className="w-4 h-4 text-rose-500 fill-rose-500" />
                   <h3 className="font-heading text-sm font-bold text-utsav-maroon-800 dark:text-utsav-gold">
-                    Live Virtual Blessings & Comments
+                    Live Virtual Blessings & Chat
                   </h3>
                 </div>
                 <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
@@ -568,7 +561,7 @@ export const LiveEventsPage: React.FC = () => {
                 type="text"
                 value={viewerName}
                 onChange={(e) => setViewerName(e.target.value)}
-                placeholder="Your Name / Organization (e.g. Bangalore Dev Club)"
+                placeholder="Your Name / Family (e.g. Verma Family)"
                 className="w-full px-3 py-1.5 rounded-xl bg-white dark:bg-utsav-maroon-950 border border-utsav-gold/30 text-xs text-utsav-brown dark:text-utsav-ivory placeholder-gray-400 focus:outline-none"
               />
               <div className="flex items-center space-x-2">
@@ -577,13 +570,13 @@ export const LiveEventsPage: React.FC = () => {
                   required
                   value={newBlessingText}
                   onChange={(e) => setNewBlessingText(e.target.value)}
-                  placeholder="Send live comment or auspicious blessing..."
+                  placeholder="Send auspicious blessing or message..."
                   className="flex-1 px-3 py-2 rounded-xl bg-white dark:bg-utsav-maroon-950 border border-utsav-gold/30 text-xs text-utsav-brown dark:text-utsav-ivory placeholder-gray-400 focus:outline-none"
                 />
                 <button
                   type="submit"
                   className="p-2 rounded-xl maroon-gradient-btn text-utsav-gold shadow-md cursor-pointer shrink-0"
-                  title="Send Comment"
+                  title="Send Blessing"
                 >
                   <Send className="w-4 h-4" />
                 </button>
@@ -593,16 +586,85 @@ export const LiveEventsPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Related YouTube Celebration & Tech Videos */}
+      <div className="space-y-4 pt-2">
+        <div className="flex items-center justify-between border-b border-utsav-gold/30 pb-3">
+          <div className="flex items-center space-x-2">
+            <Video className="w-5 h-5 text-utsav-saffron" />
+            <h3 className="font-heading text-lg font-bold text-utsav-maroon-800 dark:text-utsav-gold">
+              Related Celebration & Tech Videos on YouTube
+            </h3>
+          </div>
+          <span className="text-xs text-gray-500">Direct YouTube links</span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {RELATED_YOUTUBE_VIDEOS.map((vid) => (
+            <div
+              key={vid.id}
+              className="p-4 rounded-3xl bg-utsav-ivory dark:bg-utsav-maroon-900 border border-utsav-gold/40 shadow-md space-y-3 flex flex-col justify-between"
+            >
+              <div className="space-y-2">
+                <div className="relative aspect-video w-full rounded-2xl bg-black overflow-hidden group">
+                  <img
+                    src={`https://img.youtube.com/vi/${vid.youtubeId}/hqdefault.jpg`}
+                    alt={vid.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                  />
+                  <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-black/70 text-utsav-gold text-[9px] font-bold">
+                    {vid.tag}
+                  </div>
+                </div>
+
+                <h4 className="font-heading text-xs font-bold text-utsav-maroon-800 dark:text-utsav-gold line-clamp-2">
+                  {vid.title}
+                </h4>
+                <p className="text-[11px] text-gray-500">{vid.channel}</p>
+              </div>
+
+              <div className="flex items-center space-x-2 pt-2 border-t border-utsav-gold/20">
+                <button
+                  onClick={() => {
+                    setCurrentYoutubeId(vid.youtubeId);
+                    setSelectedEvent((prev) => ({
+                      ...prev,
+                      title: vid.title,
+                      youtubeId: vid.youtubeId,
+                      description: `Playing ${vid.title} from YouTube stream.`,
+                    }));
+                    window.scrollTo({ top: 120, behavior: 'smooth' });
+                  }}
+                  className="flex-1 py-1.5 rounded-xl gold-gradient-btn text-utsav-maroon-950 font-bold text-[11px] shadow flex items-center justify-center space-x-1"
+                >
+                  <Play className="w-3 h-3 fill-current" />
+                  <span>Play Here</span>
+                </button>
+
+                <a
+                  href={`https://www.youtube.com/watch?v=${vid.youtubeId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white shadow flex items-center justify-center"
+                  title="Open in YouTube"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Live Celebrations Channel Directory */}
       <div className="space-y-4 pt-4">
         <div className="flex items-center justify-between border-b border-utsav-gold/30 pb-3">
           <div>
             <h3 className="font-heading text-xl font-bold text-utsav-maroon-800 dark:text-utsav-gold flex items-center space-x-2">
               <Radio className="w-5 h-5 text-red-500" />
-              <span>More Live YouTube Event Streams</span>
+              <span>More Live Indian Celebration & Conclave Feeds</span>
             </h3>
             <p className="text-xs text-gray-500 dark:text-gray-400">
-              Click any event card below to switch the live HD theatre stream.
+              Click any celebration card below to switch the live HD theatre stream.
             </p>
           </div>
         </div>
@@ -613,15 +675,17 @@ export const LiveEventsPage: React.FC = () => {
             return (
               <div
                 key={ev.id}
-                onClick={() => handleSelectEvent(ev)}
-                className={`rounded-3xl bg-utsav-ivory dark:bg-utsav-maroon-900 border-2 overflow-hidden shadow-xl cursor-pointer transition-all duration-300 hover:scale-[1.01] flex flex-col justify-between ${
+                className={`rounded-3xl bg-utsav-ivory dark:bg-utsav-maroon-900 border-2 overflow-hidden shadow-xl transition-all duration-300 flex flex-col justify-between ${
                   isCurrent
                     ? 'border-utsav-gold ring-4 ring-utsav-gold/30'
                     : 'border-utsav-gold/40 hover:border-utsav-gold'
                 }`}
               >
                 {/* YouTube Preview Thumbnail */}
-                <div className="relative aspect-video w-full bg-black overflow-hidden group">
+                <div
+                  onClick={() => handleSelectEvent(ev)}
+                  className="relative aspect-video w-full bg-black overflow-hidden group cursor-pointer"
+                >
                   <img
                     src={`https://img.youtube.com/vi/${ev.youtubeId}/hqdefault.jpg`}
                     alt={ev.title}
@@ -653,7 +717,10 @@ export const LiveEventsPage: React.FC = () => {
                 {/* Card Content */}
                 <div className="p-5 space-y-3 flex-1 flex flex-col justify-between">
                   <div className="space-y-1">
-                    <h4 className="font-heading text-sm font-bold text-utsav-maroon-800 dark:text-utsav-gold line-clamp-2">
+                    <h4
+                      onClick={() => handleSelectEvent(ev)}
+                      className="font-heading text-sm font-bold text-utsav-maroon-800 dark:text-utsav-gold line-clamp-2 cursor-pointer hover:underline"
+                    >
                       {ev.title}
                     </h4>
                     <p className="text-[11px] text-gray-500 flex items-center space-x-1">
@@ -662,26 +729,72 @@ export const LiveEventsPage: React.FC = () => {
                     </p>
                   </div>
 
-                  <div className="pt-3 border-t border-utsav-gold/20 flex items-center justify-between text-xs">
-                    <span className="text-[11px] text-utsav-saffron font-semibold">
+                  <div className="pt-3 border-t border-utsav-gold/20 flex items-center justify-between text-xs gap-2">
+                    <span className="text-[11px] text-utsav-saffron font-semibold truncate">
                       {ev.scheduleTime}
                     </span>
 
-                    <button
-                      type="button"
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold shadow-sm ${
-                        isCurrent
-                          ? 'gold-gradient-btn text-utsav-maroon-950'
-                          : 'maroon-gradient-btn text-utsav-gold'
-                      }`}
-                    >
-                      {isCurrent ? '▶ Watching Now' : 'Watch Stream →'}
-                    </button>
+                    <div className="flex items-center space-x-1.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => handleSelectEvent(ev)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold shadow-sm ${
+                          isCurrent
+                            ? 'gold-gradient-btn text-utsav-maroon-950'
+                            : 'maroon-gradient-btn text-utsav-gold'
+                        }`}
+                      >
+                        {isCurrent ? '▶ Watching' : 'Play →'}
+                      </button>
+
+                      <a
+                        href={`https://www.youtube.com/watch?v=${ev.youtubeId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white shadow-sm transition-colors"
+                        title="Open on YouTube"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    </div>
                   </div>
                 </div>
               </div>
             );
           })}
+        </div>
+      </div>
+
+      {/* Explore All Events CTA Banner */}
+      <div className="p-8 rounded-3xl bg-gradient-to-r from-utsav-maroon-900 via-utsav-maroon-800 to-utsav-maroon-950 text-utsav-ivory border-2 border-utsav-gold/50 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="space-y-2 text-center md:text-left">
+          <div className="flex items-center justify-center md:justify-start space-x-2 text-utsav-gold text-xs font-bold uppercase tracking-wider">
+            <Compass className="w-4 h-4" />
+            <span>Discover & Book Events</span>
+          </div>
+          <h3 className="font-heading text-xl sm:text-3xl font-bold gold-gradient-text">
+            Explore All TechMeets, Hackathons & Cultural Celebrations
+          </h3>
+          <p className="text-xs sm:text-sm text-utsav-ivory/80 max-w-xl">
+            Browse our full directory of royal weddings, developer summits, startup conclaves, and auspicious pujas across India.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            to="/events"
+            className="px-6 py-3 rounded-2xl gold-gradient-btn text-xs sm:text-sm font-bold text-utsav-maroon-950 shadow-xl flex items-center space-x-2"
+          >
+            <span>Explore All Events</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+
+          <Link
+            to="/venues"
+            className="px-5 py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-utsav-gold border border-utsav-gold/50 text-xs sm:text-sm font-bold shadow-md"
+          >
+            <span>Royal Venues</span>
+          </Link>
         </div>
       </div>
     </div>
