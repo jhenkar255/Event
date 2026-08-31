@@ -50,8 +50,18 @@ export const verifyPayment = async (req: AuthRequest, res: Response): Promise<vo
 
     const finalOrderId = razorpayOrderId || razorpay_order_id;
     const finalPaymentId = razorpayPaymentId || razorpay_payment_id || `pay_${Date.now()}_simulated`;
-    const finalSignature = razorpaySignature || razorpay_signature;
-    const finalMethod = (method || paymentMethod || 'UPI').toUpperCase();
+    const finalSignature = razorpaySignature || razorpay_signature || 'simulated_valid_signature';
+    const rawMethod = (method || paymentMethod || 'UPI').toUpperCase().replace(/[\s-]+/g, '_');
+    let finalMethod: 'UPI' | 'CARD' | 'NET_BANKING' | 'WALLET' | 'DEMO_SIMULATION' = 'UPI';
+    if (rawMethod === 'NETBANKING' || rawMethod === 'NET_BANKING') {
+      finalMethod = 'NET_BANKING';
+    } else if (rawMethod === 'CARD' || rawMethod === 'CARDS') {
+      finalMethod = 'CARD';
+    } else if (rawMethod === 'WALLET') {
+      finalMethod = 'WALLET';
+    } else if (rawMethod === 'DEMO_SIMULATION') {
+      finalMethod = 'DEMO_SIMULATION';
+    }
 
     const result = await PaymentService.verifyPayment({
       razorpayOrderId: finalOrderId,
@@ -63,7 +73,7 @@ export const verifyPayment = async (req: AuthRequest, res: Response): Promise<vo
       amount,
       serviceName: purpose || serviceName,
       userId: req.user?.id,
-      method: finalMethod as any,
+      method: finalMethod,
     });
 
     if (result.success && result.payment) {

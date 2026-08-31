@@ -110,4 +110,44 @@ export class ReportService {
 
     return (header || '') + records;
   }
+
+  /**
+   * Export Bookings list to CSV
+   */
+  public static exportBookingsCsv(bookings: any[]): string {
+    const csvStringifier = createObjectCsvStringifier({
+      header: [
+        { id: 'bookingNumber', title: 'Booking Number' },
+        { id: 'eventName', title: 'Event Name' },
+        { id: 'itemType', title: 'Category' },
+        { id: 'itemName', title: 'Service Title' },
+        { id: 'clientName', title: 'Client Name' },
+        { id: 'clientEmail', title: 'Client Email' },
+        { id: 'amount', title: 'Total Amount (INR)' },
+        { id: 'advancePaid', title: 'Advance Paid (INR)' },
+        { id: 'balanceDue', title: 'Balance Due (INR)' },
+        { id: 'status', title: 'Status' },
+        { id: 'eventDate', title: 'Event Date' },
+      ],
+    });
+
+    const header = csvStringifier.getHeaderString();
+    const records = csvStringifier.stringifyRecords(
+      bookings.map((b) => ({
+        bookingNumber: b.bookingNumber || b._id?.toString(),
+        eventName: b.eventId?.name || 'Grand Celebration',
+        itemType: b.itemType,
+        itemName: b.itemName,
+        clientName: b.userId?.name || 'Host',
+        clientEmail: b.userId?.email || 'N/A',
+        amount: b.amount || 0,
+        advancePaid: b.advancePaid || 0,
+        balanceDue: b.balanceDue || 0,
+        status: b.status || 'CONFIRMED',
+        eventDate: b.eventDate || 'N/A',
+      }))
+    );
+
+    return (header || '') + records;
+  }
 }

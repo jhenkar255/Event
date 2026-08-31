@@ -233,8 +233,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenAiWizard }) => {
               </Link>
             )}
 
-            {/* Create Event Action (Hidden on Profile Page to prevent clutter and overflow) */}
-            {isAuthenticated && !isProfilePage && (
+            {/* Create Event Action (Only for Clients & Hosts; hidden for Admin & on Profile Page) */}
+            {isAuthenticated && !isProfilePage && !isAdmin && (
               <Link
                 to="/events/create"
                 className="flex items-center space-x-1 px-2.5 xl:px-3.5 py-1.5 xl:py-2 rounded-xl maroon-gradient-btn font-semibold text-xs xl:text-sm shadow-md text-utsav-gold hover:scale-105 transition-transform shrink-0 whitespace-nowrap"
@@ -454,7 +454,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenAiWizard }) => {
               </div>
 
               <div className="pt-2 border-t border-utsav-gold/20 flex flex-col space-y-2">
-                {!isProfilePage && (
+                {!isProfilePage && !isAdmin && (
                   <Link
                     to="/events/create"
                     onClick={() => setMobileMenuOpen(false)}

@@ -38,6 +38,11 @@ export const LoginPage: React.FC = () => {
       setError('Please enter your email.');
       return;
     }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      setError('Please enter a valid email address.');
+      return;
+    }
     if (!password) {
       setError('Please enter your password.');
       return;

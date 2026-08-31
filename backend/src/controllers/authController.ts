@@ -134,8 +134,9 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     const identifier = (email || '').toLowerCase().trim();
     const rawPassword = (password || '').trim();
 
-    if (!identifier) {
-      res.status(400).json({ success: false, message: 'Please enter your email.' });
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(identifier)) {
+      res.status(400).json({ success: false, message: 'Please enter a valid email address.' });
       return;
     }
 
@@ -144,15 +145,8 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Lookup user strictly in database
-    const user = await User.findOne({
-      $or: [
-        { email: identifier },
-        ...(identifier === 'admin' ? [{ role: 'ADMIN' }, { email: 'jhenkar1234@gmail.com' }] : []),
-        ...(identifier === 'organizer' ? [{ role: 'ORGANIZER' }, { email: 'organizer@utsavmitra.demo' }] : []),
-        ...(identifier === 'user' || identifier === 'client' ? [{ role: 'USER' }, { email: 'user@utsavmitra.demo' }] : []),
-      ],
-    }).select('+password');
+    // Lookup user strictly by registered email in database
+    const user = await User.findOne({ email: identifier }).select('+password');
 
     if (!user) {
       res.status(401).json({

@@ -66,6 +66,9 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
       const orderId = orderRes.orderId || `order_${Date.now()}`;
       const paymentRecordId = orderRes.paymentRecordId;
 
+      const normalizedMethod =
+        method === 'netbanking' ? 'NET_BANKING' : method === 'card' ? 'CARD' : 'UPI';
+
       // 2. Simulate Razorpay payment gateway verification
       const verifyRes: any = await api.post('/payments/verify', {
         razorpay_order_id: orderId,
@@ -78,8 +81,8 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
         eventId,
         amount,
         purpose,
-        paymentMethod: method.toUpperCase(),
-        method: method.toUpperCase(),
+        paymentMethod: normalizedMethod,
+        method: normalizedMethod,
       });
 
       if (verifyRes.success || verifyRes.payment) {

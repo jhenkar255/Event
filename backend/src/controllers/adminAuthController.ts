@@ -33,8 +33,9 @@ export const adminLogin = async (req: Request, res: Response): Promise<void> => 
     const identifier = (email || '').toLowerCase().trim();
     const rawPassword = (password || '').trim();
 
-    if (!identifier) {
-      res.status(400).json({ success: false, message: 'Please enter your email.' });
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(identifier)) {
+      res.status(400).json({ success: false, message: 'Please enter a valid email address.' });
       return;
     }
 
@@ -43,13 +44,8 @@ export const adminLogin = async (req: Request, res: Response): Promise<void> => 
       return;
     }
 
-    // Find admin user in database
-    const admin = await User.findOne({
-      $or: [
-        { email: identifier },
-        ...(identifier === 'admin' ? [{ role: 'ADMIN' }, { email: 'jhenkar1234@gmail.com' }] : []),
-      ],
-    }).select('+password');
+    // Find admin user in database strictly by registered email
+    const admin = await User.findOne({ email: identifier, role: 'ADMIN' }).select('+password');
 
     if (!admin) {
       res.status(401).json({

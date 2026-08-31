@@ -160,8 +160,8 @@ export const DashboardPage: React.FC = () => {
   const filteredEvents = events.filter((ev) => {
     const matchesStatus = statusFilter === 'ALL' || ev.status === statusFilter;
     const matchesSearch =
-      ev.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (ev.eventType || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (ev.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      ((ev as any).type || (ev as any).eventType || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (ev.culturalTradition || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (ev.location?.city || '').toLowerCase().includes(searchQuery.toLowerCase());
     return matchesStatus && matchesSearch;

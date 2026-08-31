@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
@@ -23,6 +23,7 @@ import {
   Sparkles,
   Download,
   Upload,
+  ArrowLeft,
   Plus,
   Bell,
   AlertTriangle,
@@ -216,6 +217,7 @@ const FALLBACK_PAYMENTS: IPayment[] = [
 
 export const EventCommandCenterPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { socket, joinEventRoom } = useSocket();
   const { user, isOrganizer, isAdmin } = useAuth();
 
@@ -415,7 +417,9 @@ export const EventCommandCenterPage: React.FC = () => {
   const checkedInCount = guests.filter((g) => g.checkedIn).length;
   const totalGuests = guests.length || currentEvent.guestCount || 1;
   const attendanceRate = Math.round((checkedInCount / totalGuests) * 100);
-  const totalPaid = payments.filter((p) => p.status === 'COMPLETED').reduce((acc, p) => acc + p.amount, 0);
+  const totalPaid = payments
+    .filter((p) => p.status === 'COMPLETED' || p.status === 'SUCCESS')
+    .reduce((acc, p) => acc + (p.totalAmount || p.amount || 0), 0);
 
   const tabs = [
     { key: 'overview', label: 'Overview & Schedule', icon: Calendar },
@@ -434,6 +438,30 @@ export const EventCommandCenterPage: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-in fade-in duration-200">
+      {/* Top Back Navigation Bar */}
+      <div className="flex items-center justify-between">
+        <button
+          onClick={() => (window.history.length > 1 ? navigate(-1) : navigate(isOrganizer ? '/organizer/dashboard' : '/dashboard'))}
+          className="flex items-center space-x-2 text-xs font-bold text-utsav-maroon-900 dark:text-utsav-gold hover:underline cursor-pointer group"
+        >
+          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+          <span>← Back to {isOrganizer ? 'Organizer Studio' : 'My Dashboard'}</span>
+        </button>
+
+        <div className="flex items-center space-x-2">
+          <Link
+            to="/events"
+            className="text-xs font-semibold text-utsav-brown-600 dark:text-utsav-ivory-300 hover:text-utsav-gold"
+          >
+            All Celebrations
+          </Link>
+          <span className="text-gray-400">•</span>
+          <span className="text-xs font-bold text-utsav-gold">
+            Command Center
+          </span>
+        </div>
+      </div>
+
       {/* Floating AI Chat Assistant with Event Context */}
       <UtsavAIChat
         eventContext={{

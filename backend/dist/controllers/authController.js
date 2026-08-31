@@ -102,23 +102,17 @@ const login = async (req, res) => {
         const { email, password, rememberMe } = req.body;
         const identifier = (email || '').toLowerCase().trim();
         const rawPassword = (password || '').trim();
-        if (!identifier) {
-            res.status(400).json({ success: false, message: 'Please enter your email.' });
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(identifier)) {
+            res.status(400).json({ success: false, message: 'Please enter a valid email address.' });
             return;
         }
         if (!rawPassword) {
             res.status(400).json({ success: false, message: 'Please enter your password.' });
             return;
         }
-        // Lookup user strictly in database
-        const user = await User_1.User.findOne({
-            $or: [
-                { email: identifier },
-                ...(identifier === 'admin' ? [{ role: 'ADMIN' }, { email: 'jhenkar1234@gmail.com' }] : []),
-                ...(identifier === 'organizer' ? [{ role: 'ORGANIZER' }, { email: 'organizer@utsavmitra.demo' }] : []),
-                ...(identifier === 'user' || identifier === 'client' ? [{ role: 'USER' }, { email: 'user@utsavmitra.demo' }] : []),
-            ],
-        }).select('+password');
+        // Lookup user strictly by registered email in database
+        const user = await User_1.User.findOne({ email: identifier }).select('+password');
         if (!user) {
             res.status(401).json({
                 success: false,

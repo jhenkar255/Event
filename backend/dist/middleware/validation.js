@@ -58,8 +58,9 @@ exports.registerSchema = joi_1.default.object({
     services: joi_1.default.array().items(joi_1.default.string()).allow(null),
 });
 exports.loginSchema = joi_1.default.object({
-    email: joi_1.default.string().required().messages({
+    email: joi_1.default.string().email({ tlds: { allow: false } }).required().messages({
         'string.empty': 'Please enter your email.',
+        'string.email': 'Please enter a valid email address.',
         'any.required': 'Please enter your email.',
     }),
     password: joi_1.default.string().min(1).required().messages({

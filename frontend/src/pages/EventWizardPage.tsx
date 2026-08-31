@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { api } from '../api/client';
+import { useAuth } from '../context/AuthContext';
 import { IVenue, IDecoration, ICateringPackage, IEntertainment } from '@shared/types';
 import { INDIAN_EVENT_TYPES, INDIAN_TRADITIONS, INDIAN_CITIES } from '@shared/constants';
 import {
@@ -481,9 +482,17 @@ const SHLOKA_PRESETS = [
 export const EventWizardPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
   const wizardContainerRef = useRef<HTMLDivElement>(null);
 
   const prefill = (location.state as any)?.prefillData;
+
+  // Restrict Event Creation for Admin users (Fault 7)
+  useEffect(() => {
+    if (user?.role === 'ADMIN') {
+      navigate('/admin/dashboard', { replace: true });
+    }
+  }, [user, navigate]);
 
   // Step state
   const [currentStep, setCurrentStep] = useState(1);
@@ -832,6 +841,21 @@ export const EventWizardPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Top Back Navigation Bar */}
+      <div className="flex items-center justify-between">
+        <button
+          onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/events'))}
+          className="flex items-center space-x-2 text-xs font-bold text-utsav-maroon-900 dark:text-utsav-gold hover:underline cursor-pointer group"
+        >
+          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+          <span>← Back to Auspicious Celebrations Hub</span>
+        </button>
+
+        <span className="text-[11px] font-semibold text-gray-500">
+          Step {currentStep} of 6
+        </span>
+      </div>
 
       {/* Wizard Header */}
       <div className="p-6 rounded-3xl bg-utsav-ivory dark:bg-utsav-maroon-900 border-2 border-utsav-gold/40 shadow-xl flex flex-col md:flex-row items-center justify-between gap-4">

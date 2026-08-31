@@ -287,6 +287,15 @@ export const exportReportCsv = async (req: Request, res: Response): Promise<void
       return;
     }
 
+    if (type === 'bookings') {
+      const bookings = await Booking.find().populate('eventId userId');
+      const csv = ReportService.exportBookingsCsv(bookings);
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename="utsavmitra_bookings_report.csv"');
+      res.send(csv);
+      return;
+    }
+
     if (type === 'payments') {
       const payments = await Payment.find();
       const csv = ReportService.exportPaymentsCsv(payments);
@@ -296,7 +305,7 @@ export const exportReportCsv = async (req: Request, res: Response): Promise<void
       return;
     }
 
-    res.status(400).json({ success: false, message: 'Unsupported export type. Use users, events, or payments.' });
+    res.status(400).json({ success: false, message: 'Unsupported export type. Use users, events, bookings, or payments.' });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
   }

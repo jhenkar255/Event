@@ -58,8 +58,9 @@ export const registerSchema = Joi.object({
 });
 
 export const loginSchema = Joi.object({
-  email: Joi.string().required().messages({
+  email: Joi.string().email({ tlds: { allow: false } }).required().messages({
     'string.empty': 'Please enter your email.',
+    'string.email': 'Please enter a valid email address.',
     'any.required': 'Please enter your email.',
   }),
   password: Joi.string().min(1).required().messages({

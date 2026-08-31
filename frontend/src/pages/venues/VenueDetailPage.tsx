@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { api } from '../../api/client';
 import { IVenue } from '@shared/types';
 import { VenueMap } from '../../components/maps/VenueMap';
@@ -19,10 +19,12 @@ import {
   Music,
   Car,
   Wind,
+  ArrowLeft,
 } from 'lucide-react';
 
 export const VenueDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [venue, setVenue] = useState<IVenue | null>(null);
   const [loading, setLoading] = useState(true);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
@@ -58,7 +60,22 @@ export const VenueDetailPage: React.FC = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-in fade-in duration-200">
+      {/* Top Back Navigation Bar */}
+      <div className="flex items-center justify-between">
+        <button
+          onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/venues'))}
+          className="flex items-center space-x-2 text-xs font-bold text-utsav-maroon-900 dark:text-utsav-gold hover:underline cursor-pointer group"
+        >
+          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+          <span>← Back to Royal Venues Catalog</span>
+        </button>
+
+        <span className="text-[11px] font-semibold text-gray-500">
+          UtsavMitra Heritage Collection
+        </span>
+      </div>
+
       {/* Razorpay Escrow Modal */}
       <RazorpayCheckoutModal
         isOpen={isBookingModalOpen}

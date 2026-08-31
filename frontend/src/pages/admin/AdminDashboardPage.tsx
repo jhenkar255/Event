@@ -182,7 +182,9 @@ export const AdminDashboardPage: React.FC = () => {
     }
   };
 
-  const totalVolume = allPayments.reduce((acc, p) => acc + (p.status === 'COMPLETED' ? p.amount : 0), 0);
+  const totalRevenue = allPayments
+    .filter((p) => p.status === 'SUCCESS' || p.status === 'COMPLETED')
+    .reduce((acc, p) => acc + (p.totalAmount || p.amount || 0), 0);
   const totalBookingsValue = allBookings.reduce((acc, b) => acc + (b.amount || 0), 0);
   const totalAdvancePaid = allBookings.reduce((acc, b) => acc + (b.advancePaid || 0), 0);
   const totalBalanceDue = allBookings.reduce((acc, b) => acc + (b.balanceDue || 0), 0);
@@ -198,9 +200,120 @@ export const AdminDashboardPage: React.FC = () => {
     return matchesCategory && matchesStatus && matchesSearch;
   });
 
-  const downloadReport = (type: string) => {
-    const token = localStorage.getItem('utsavmitra_token');
-    window.open(`/api/admin/reports/${type}/csv?token=${token}`, '_blank');
+  const downloadReport = (type: 'events' | 'users' | 'bookings' | 'payments') => {
+    const dateStamp = new Date().toISOString().split('T')[0];
+
+    if (type === 'bookings' || type === 'payments') {
+      const headers = [
+        'Booking ID',
+        'Event Name',
+        'Item Type',
+        'Item Name',
+        'Client Name',
+        'Client Email',
+        'Client Phone',
+        'Total Amount (INR)',
+        'Advance Paid (INR)',
+        'Balance Due (INR)',
+        'Status',
+        'Event Date',
+        'Created At',
+      ];
+      const rows = allBookings.map((b) => [
+        `"${b.bookingNumber || b._id}"`,
+        `"${(typeof b.eventId === 'object' && b.eventId?.name) || 'Celebration'}"`,
+        `"${b.itemType || 'SERVICE'}"`,
+        `"${(b.itemName || '').replace(/"/g, '""')}"`,
+        `"${(typeof b.userId === 'object' && b.userId?.name) || 'Valued Client'}"`,
+        `"${(typeof b.userId === 'object' && b.userId?.email) || 'N/A'}"`,
+        `"${(typeof b.userId === 'object' && b.userId?.phone) || 'N/A'}"`,
+        b.amount || 0,
+        b.advancePaid || 0,
+        b.balanceDue || 0,
+        `"${b.status || 'CONFIRMED'}"`,
+        `"${b.eventDate || '2026-11-20'}"`,
+        `"${b.createdAt || dateStamp}"`,
+      ]);
+
+      const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `utsavmitra_bookings_export_${dateStamp}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      return;
+    }
+
+    if (type === 'events') {
+      const headers = [
+        'Event ID',
+        'Event Name',
+        'Type',
+        'Tradition',
+        'City',
+        'Address',
+        'Date',
+        'Guest Count',
+        'Budget Allocated (INR)',
+        'Spent Budget (INR)',
+        'Status',
+      ];
+      const rows = allEvents.map((ev) => [
+        `"${ev.eventId || ev._id}"`,
+        `"${(ev.name || '').replace(/"/g, '""')}"`,
+        `"${(ev as any).type || (ev as any).eventType || 'Wedding'}"`,
+        `"${ev.culturalTradition || 'Rajasthani'}"`,
+        `"${ev.location?.city || 'Jaipur'}"`,
+        `"${(ev.location?.address || '').replace(/"/g, '""')}"`,
+        `"${ev.date || '2026-11-20'}"`,
+        ev.guestCount || 0,
+        ev.budget || 0,
+        ev.spentBudget || 0,
+        `"${ev.status || 'PLANNING'}"`,
+      ]);
+
+      const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `utsavmitra_events_export_${dateStamp}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      return;
+    }
+
+    if (type === 'users') {
+      const headers = ['User ID', 'Full Name', 'Email', 'Phone', 'Role', 'Status', 'City', 'Created At'];
+      const rows = [...allUsers, ...allOrganizers].map((u) => [
+        `"${u._id}"`,
+        `"${(u.name || '').replace(/"/g, '""')}"`,
+        `"${u.email || ''}"`,
+        `"${u.phone || 'N/A'}"`,
+        `"${u.role || 'USER'}"`,
+        `"${u.status || 'ACTIVE'}"`,
+        `"${u.city || 'Jaipur'}"`,
+        `"${u.createdAt || dateStamp}"`,
+      ]);
+
+      const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `utsavmitra_users_export_${dateStamp}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      return;
+    }
   };
 
   return (
@@ -222,7 +335,7 @@ export const AdminDashboardPage: React.FC = () => {
             UtsavMitra <span className="gold-gradient-text">Command Center</span>
           </h1>
           <p className="text-xs sm:text-sm text-utsav-ivory/80 max-w-xl font-light">
-            Platform governance, organizer verification queue, service escrow monitoring, and security audit logging.
+            Platform governance, web bookings monitoring, escrow revenue analytics, and security audit logging.
           </p>
         </div>
       </div>
@@ -234,7 +347,7 @@ export const AdminDashboardPage: React.FC = () => {
         </div>
       )}
 
-      {/* KPI Cards */}
+      {/* KPI Cards: Online Web Bookings Count & Platform Revenue */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
         <button
           onClick={() => setActiveTab('events')}
@@ -245,12 +358,14 @@ export const AdminDashboardPage: React.FC = () => {
           }`}
         >
           <span className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase block">
-            Total Events
+            Web Event Bookings
           </span>
           <p className="font-heading text-xl sm:text-2xl font-bold text-utsav-maroon-800 dark:text-utsav-gold">
-            {allEvents.length}
+            {allEvents.length} Events
           </p>
-          <span className="text-[9px] text-emerald-600 font-bold">Platform Wide</span>
+          <span className="text-[9px] text-emerald-600 font-bold">
+            {allEvents.filter((e) => e.status === 'CONFIRMED' || e.status === 'ONGOING').length} Live/Confirmed
+          </span>
         </button>
 
         <button
@@ -262,12 +377,29 @@ export const AdminDashboardPage: React.FC = () => {
           }`}
         >
           <span className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase block">
-            Booked Services
+            Services Booked
           </span>
           <p className="font-heading text-xl sm:text-2xl font-bold text-utsav-maroon-800 dark:text-utsav-gold">
-            {allBookings.length}
+            {allBookings.length} Services
           </p>
           <span className="text-[9px] text-amber-600 font-bold">₹{(totalBookingsValue / 100000).toFixed(1)}L Booked</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('payments')}
+          className={`text-left p-4 rounded-3xl transition-all duration-300 relative overflow-hidden flex flex-col justify-between group cursor-pointer ${
+            activeTab === 'payments'
+              ? 'bg-utsav-beige-100 dark:bg-utsav-maroon-800 border-2 border-utsav-gold ring-4 ring-utsav-gold/30 shadow-2xl scale-[1.02]'
+              : 'bg-utsav-ivory dark:bg-utsav-maroon-900 border border-utsav-gold/40 shadow-lg hover:border-utsav-gold'
+          }`}
+        >
+          <span className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase block">
+            Platform Revenue
+          </span>
+          <p className="font-heading text-xl sm:text-2xl font-bold text-utsav-maroon-800 dark:text-utsav-gold">
+            ₹{totalRevenue > 0 ? (totalRevenue / 100000).toFixed(2) + 'L' : '0.00'}
+          </p>
+          <span className="text-[9px] text-emerald-600 font-bold">Escrow Verified</span>
         </button>
 
         <button
@@ -301,7 +433,7 @@ export const AdminDashboardPage: React.FC = () => {
           <p className="font-heading text-xl sm:text-2xl font-bold text-utsav-maroon-800 dark:text-utsav-gold">
             {allUsers.length}
           </p>
-          <span className="text-[9px] text-emerald-600 font-bold">Active User Accounts</span>
+          <span className="text-[9px] text-emerald-600 font-bold">Active Host Accounts</span>
         </button>
 
         <button
@@ -861,7 +993,7 @@ export const AdminDashboardPage: React.FC = () => {
               </p>
               <button
                 type="button"
-                onClick={() => downloadReport('payments')}
+                onClick={() => downloadReport('bookings')}
                 className="w-full py-2 rounded-xl gold-gradient-btn text-xs font-bold flex items-center justify-center space-x-1.5 shadow-md cursor-pointer"
               >
                 <Download className="w-3.5 h-3.5" />

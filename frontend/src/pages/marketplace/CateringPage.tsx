@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../../api/client';
 import { ICateringPackage } from '@shared/types';
-import { Utensils, Star, CheckCircle2, Sparkles, Plus, Eye, X, Flame, ChefHat } from 'lucide-react';
+import { Utensils, Star, CheckCircle2, Sparkles, Plus, Eye, X, Flame, ChefHat, ArrowLeft } from 'lucide-react';
 import { RazorpayCheckoutModal } from '../../components/payments/RazorpayCheckoutModal';
 
 const FALLBACK_CATERINGS: ICateringPackage[] = [
@@ -184,6 +185,7 @@ const FALLBACK_CATERINGS: ICateringPackage[] = [
 ];
 
 export const CateringPage: React.FC = () => {
+  const navigate = useNavigate();
   const [caterings, setCaterings] = useState<ICateringPackage[]>(FALLBACK_CATERINGS);
   const [loading, setLoading] = useState(false);
   const [selectedCatering, setSelectedCatering] = useState<ICateringPackage | null>(null);
@@ -213,7 +215,22 @@ export const CateringPage: React.FC = () => {
   });
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-in fade-in duration-200">
+      {/* Top Back Navigation Bar */}
+      <div className="flex items-center justify-between">
+        <button
+          onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/dashboard'))}
+          className="flex items-center space-x-2 text-xs font-bold text-utsav-maroon-900 dark:text-utsav-gold hover:underline cursor-pointer group"
+        >
+          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+          <span>← Back to Services Directory</span>
+        </button>
+
+        <span className="text-[11px] font-semibold text-gray-500">
+          UtsavMitra Royal Gastronomy
+        </span>
+      </div>
+
       {/* Razorpay Escrow Modal */}
       <RazorpayCheckoutModal
         isOpen={isModalOpen}

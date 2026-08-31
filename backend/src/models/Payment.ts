@@ -24,7 +24,7 @@ const PaymentSchema = new Schema<IPaymentDocument>(
     totalAmount: { type: Number, required: true },
     method: {
       type: String,
-      enum: ['UPI', 'CARD', 'NET_BANKING', 'WALLET', 'DEMO_SIMULATION'],
+      enum: ['UPI', 'CARD', 'NET_BANKING', 'NETBANKING', 'WALLET', 'DEMO_SIMULATION'],
       default: 'UPI',
     },
     status: {

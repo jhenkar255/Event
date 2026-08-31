@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../../api/client';
 import { IDecoration } from '@shared/types';
-import { Flower2, Star, CheckCircle2, Sparkles, Plus } from 'lucide-react';
+import { Flower2, Star, CheckCircle2, Sparkles, Plus, ArrowLeft } from 'lucide-react';
 import { DiyaIcon, MandalaCorner } from '../../components/layout/IndianMotifs';
 import { RazorpayCheckoutModal } from '../../components/payments/RazorpayCheckoutModal';
 
@@ -69,6 +70,7 @@ const FALLBACK_DECORATIONS: IDecoration[] = [
 ];
 
 export const DecorationsPage: React.FC = () => {
+  const navigate = useNavigate();
   const [decorations, setDecorations] = useState<IDecoration[]>(FALLBACK_DECORATIONS);
   const [loading, setLoading] = useState(false);
   const [selectedDecor, setSelectedDecor] = useState<IDecoration | null>(null);
@@ -87,7 +89,22 @@ export const DecorationsPage: React.FC = () => {
   }, []);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-in fade-in duration-200">
+      {/* Top Back Navigation Bar */}
+      <div className="flex items-center justify-between">
+        <button
+          onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/dashboard'))}
+          className="flex items-center space-x-2 text-xs font-bold text-utsav-maroon-900 dark:text-utsav-gold hover:underline cursor-pointer group"
+        >
+          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+          <span>← Back to Services Directory</span>
+        </button>
+
+        <span className="text-[11px] font-semibold text-gray-500">
+          UtsavMitra Sacred Decor & Mandap
+        </span>
+      </div>
+
       <RazorpayCheckoutModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

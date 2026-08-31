@@ -33,8 +33,21 @@ const verifyPayment = async (req, res) => {
         const { razorpayOrderId, razorpay_order_id, razorpayPaymentId, razorpay_payment_id, razorpaySignature, razorpay_signature, paymentRecordId, method, paymentMethod, bookingId, eventId, amount, purpose, serviceName, } = req.body;
         const finalOrderId = razorpayOrderId || razorpay_order_id;
         const finalPaymentId = razorpayPaymentId || razorpay_payment_id || `pay_${Date.now()}_simulated`;
-        const finalSignature = razorpaySignature || razorpay_signature;
-        const finalMethod = (method || paymentMethod || 'UPI').toUpperCase();
+        const finalSignature = razorpaySignature || razorpay_signature || 'simulated_valid_signature';
+        const rawMethod = (method || paymentMethod || 'UPI').toUpperCase().replace(/[\s-]+/g, '_');
+        let finalMethod = 'UPI';
+        if (rawMethod === 'NETBANKING' || rawMethod === 'NET_BANKING') {
+            finalMethod = 'NET_BANKING';
+        }
+        else if (rawMethod === 'CARD' || rawMethod === 'CARDS') {
+            finalMethod = 'CARD';
+        }
+        else if (rawMethod === 'WALLET') {
+            finalMethod = 'WALLET';
+        }
+        else if (rawMethod === 'DEMO_SIMULATION') {
+            finalMethod = 'DEMO_SIMULATION';
+        }
         const result = await paymentService_1.PaymentService.verifyPayment({
             razorpayOrderId: finalOrderId,
             razorpayPaymentId: finalPaymentId,

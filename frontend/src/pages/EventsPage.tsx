@@ -1,19 +1,33 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
+import { useAuth } from '../context/AuthContext';
 import { IEvent } from '@shared/types';
 import { EventCard } from '../components/events/EventCard';
-import { Search, Filter, PlusCircle, Sparkles, Calendar, Radio } from 'lucide-react';
+import { Search, Filter, PlusCircle, Sparkles, Calendar, Radio, ArrowLeft, ShieldCheck } from 'lucide-react';
 import { INDIAN_TRADITIONS, INDIAN_EVENT_TYPES } from '@shared/constants';
 import { AIEventWizardModal } from '../components/ai/AIEventWizardModal';
 
 export const EventsPage: React.FC = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const initialSearch = searchParams.get('search') || '';
+
   const [events, setEvents] = useState<IEvent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(initialSearch);
   const [selectedTradition, setSelectedTradition] = useState('All');
   const [selectedStatus, setSelectedStatus] = useState('All');
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+
+  const isAdmin = user?.role === 'ADMIN';
+
+  useEffect(() => {
+    if (initialSearch) {
+      setSearch(initialSearch);
+    }
+  }, [initialSearch]);
 
   useEffect(() => {
     api
@@ -28,10 +42,20 @@ export const EventsPage: React.FC = () => {
   }, []);
 
   const filteredEvents = events.filter((ev) => {
+    const q = (search || '').toLowerCase().trim();
+    const eventName = (ev.name || '').toLowerCase();
+    const eventType = ((ev as any).type || (ev as any).eventType || '').toLowerCase();
+    const tradition = (ev.culturalTradition || '').toLowerCase();
+    const city = (ev.location?.city || '').toLowerCase();
+    const address = (ev.location?.address || '').toLowerCase();
+
     const matchesSearch =
-      ev.name.toLowerCase().includes(search.toLowerCase()) ||
-      ev.eventType.toLowerCase().includes(search.toLowerCase()) ||
-      (ev.location?.city || '').toLowerCase().includes(search.toLowerCase());
+      !q ||
+      eventName.includes(q) ||
+      eventType.includes(q) ||
+      tradition.includes(q) ||
+      city.includes(q) ||
+      address.includes(q);
 
     const matchesTradition =
       selectedTradition === 'All' || ev.culturalTradition === selectedTradition;
@@ -43,8 +67,29 @@ export const EventsPage: React.FC = () => {
   });
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-in fade-in duration-200">
       <AIEventWizardModal isOpen={isAiModalOpen} onClose={() => setIsAiModalOpen(false)} />
+
+      {/* Top Back Navigation Bar */}
+      <div className="flex items-center justify-between">
+        <button
+          onClick={() => (window.history.length > 1 ? navigate(-1) : navigate('/dashboard'))}
+          className="flex items-center space-x-2 text-xs font-bold text-utsav-maroon-900 dark:text-utsav-gold hover:underline cursor-pointer group"
+        >
+          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+          <span>← Back to Dashboard</span>
+        </button>
+
+        {isAdmin && (
+          <Link
+            to="/admin/dashboard"
+            className="flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 border border-amber-500/40"
+          >
+            <ShieldCheck className="w-3.5 h-3.5" />
+            <span>Admin Governance Console</span>
+          </Link>
+        )}
+      </div>
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-utsav-gold/30 pb-4">
@@ -57,23 +102,26 @@ export const EventsPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center space-x-3">
-          <button
-            onClick={() => setIsAiModalOpen(true)}
-            className="px-4 py-2.5 rounded-xl gold-gradient-btn text-xs font-bold shadow-md flex items-center space-x-1.5"
-          >
-            <Sparkles className="w-4 h-4 text-utsav-maroon-950" />
-            <span>Plan with AI</span>
-          </button>
+        {/* Action Controls - Hidden for Admin as Admin does not create personal events */}
+        {!isAdmin && (
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={() => setIsAiModalOpen(true)}
+              className="px-4 py-2.5 rounded-xl gold-gradient-btn text-xs font-bold shadow-md flex items-center space-x-1.5 cursor-pointer"
+            >
+              <Sparkles className="w-4 h-4 text-utsav-maroon-950" />
+              <span>Plan with AI</span>
+            </button>
 
-          <Link
-            to="/events/create"
-            className="px-4 py-2.5 rounded-xl maroon-gradient-btn text-xs font-bold shadow-md flex items-center space-x-1.5 text-utsav-gold"
-          >
-            <PlusCircle className="w-4 h-4" />
-            <span>+ Create Event</span>
-          </Link>
-        </div>
+            <Link
+              to="/events/create"
+              className="px-4 py-2.5 rounded-xl maroon-gradient-btn text-xs font-bold shadow-md flex items-center space-x-1.5 text-utsav-gold"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span>+ Create Event</span>
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* Search & Filter Strip */}
