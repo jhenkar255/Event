@@ -523,11 +523,23 @@ export const googleAuth = async (req: Request, res: Response): Promise<void> => 
           audience: process.env.GOOGLE_CLIENT_ID || '1057954086797-9nslebcooea2rejjll6mpk0fdiu7eh60.apps.googleusercontent.com',
         });
         const payload = ticket.getPayload();
-        if (payload && payload.email) {
-          email = payload.email;
-          name = payload.name || name;
-          picture = payload.picture || picture;
+        if (!payload || !payload.email) {
+          res.status(401).json({
+            success: false,
+            message: 'Google Cloud Console verification failed: No verified Google email found in token.',
+          });
+          return;
         }
+        if (payload.email_verified === false) {
+          res.status(401).json({
+            success: false,
+            message: 'Google account is not verified. Please verify your Google account before signing in.',
+          });
+          return;
+        }
+        email = payload.email;
+        name = payload.name || name;
+        picture = payload.picture || picture;
       } catch (verifyErr) {
         // Safe fallback decode
         try {
@@ -536,9 +548,19 @@ export const googleAuth = async (req: Request, res: Response): Promise<void> => 
             email = decoded.email;
             name = decoded.name || name;
             picture = decoded.picture || picture;
+          } else {
+            res.status(401).json({
+              success: false,
+              message: 'Google Cloud Console verification failed: Invalid or expired Google OAuth credential.',
+            });
+            return;
           }
-        } catch (decodeErr) {
-          console.warn('Could not parse Google credential token:', decodeErr);
+        } catch {
+          res.status(401).json({
+            success: false,
+            message: 'Google Cloud Console verification failed: Invalid Google OAuth credential.',
+          });
+          return;
         }
       }
     }

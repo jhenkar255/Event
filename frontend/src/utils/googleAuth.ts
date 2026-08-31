@@ -55,7 +55,13 @@ export const triggerGoogleOAuthPopup = async (options: {
       scope: 'openid email profile',
       callback: async (tokenResponse: any) => {
         if (tokenResponse.error) {
-          options.onError(new Error(tokenResponse.error_description || tokenResponse.error));
+          let errorMsg = tokenResponse.error_description || tokenResponse.error;
+          if (tokenResponse.error === 'access_denied') {
+            errorMsg = 'Google Cloud Console Access Denied: If this app is in Testing mode, ensure this Google email is added to Test Users in Google Cloud Console OAuth consent screen.';
+          } else if (tokenResponse.error === 'origin_mismatch') {
+            errorMsg = `Google Cloud Console Origin Mismatch: Please ensure ${window.location.origin} is listed under Authorized JavaScript origins in Google Cloud Console Credentials.`;
+          }
+          options.onError(new Error(errorMsg));
           return;
         }
 
@@ -69,12 +75,17 @@ export const triggerGoogleOAuthPopup = async (options: {
             });
 
             if (!res.ok) {
-              throw new Error(`Google profile request failed with status ${res.status}`);
+              const errBody = await res.json().catch(() => ({}));
+              throw new Error(errBody.error_description || `Google profile verification failed (${res.status}). Invalid Google account.`);
             }
 
             const profile = await res.json();
             if (!profile.email) {
               throw new Error('Google did not return a valid email address.');
+            }
+
+            if (profile.email_verified === false) {
+              throw new Error('Google account email is not verified. Please verify your Google account.');
             }
 
             options.onSuccess({
@@ -89,7 +100,13 @@ export const triggerGoogleOAuthPopup = async (options: {
         }
       },
       error_callback: (err: any) => {
-        options.onError(err);
+        let msg = err?.message || 'Google Sign-In popup was cancelled or blocked by browser.';
+        if (err?.type === 'popup_closed') {
+          msg = 'Google sign-in popup was closed before completing authentication.';
+        } else if (err?.type === 'access_denied') {
+          msg = 'Google Cloud Console Access Denied: User not authorized in Test Users list.';
+        }
+        options.onError(new Error(msg));
       },
     });
 
