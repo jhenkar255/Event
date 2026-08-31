@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { DiyaIcon, MandalaCorner } from '../../components/layout/IndianMotifs';
 import { Mail, ArrowLeft, CheckCircle2, AlertCircle, KeyRound } from 'lucide-react';
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
 export const ForgotPasswordPage: React.FC = () => {
+  const [searchParams] = useSearchParams();
   const { forgotPassword } = useAuth();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
@@ -12,13 +15,30 @@ export const ForgotPasswordPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [demoToken, setDemoToken] = useState<string | null>(null);
 
+  useEffect(() => {
+    const paramEmail = searchParams.get('email');
+    if (paramEmail) {
+      setEmail(paramEmail);
+    }
+  }, [searchParams]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    setLoading(true);
 
+    const trimmedEmail = email.trim().toLowerCase();
+    if (!trimmedEmail) {
+      setError('Please enter your email address.');
+      return;
+    }
+    if (!EMAIL_REGEX.test(trimmedEmail)) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+
+    setLoading(true);
     try {
-      const res = await forgotPassword(email.trim().toLowerCase());
+      const res = await forgotPassword(trimmedEmail);
       setSubmitted(true);
       if (res.resetToken) {
         setDemoToken(res.resetToken);

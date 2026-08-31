@@ -53,7 +53,7 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     } = req.body;
 
     const sanitizedEmail = (email || '').toLowerCase().trim();
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
     if (!sanitizedEmail || !emailRegex.test(sanitizedEmail)) {
       res.status(400).json({
         success: false,
@@ -147,7 +147,7 @@ export const login = async (req: Request, res: Response): Promise<void> => {
     const identifier = (email || '').toLowerCase().trim();
     const rawPassword = (password || '').trim();
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
     if (!emailRegex.test(identifier)) {
       res.status(400).json({ success: false, message: 'Please enter a valid email address.' });
       return;
@@ -280,6 +280,15 @@ export const forgotPassword = async (req: Request, res: Response): Promise<void>
   try {
     const { email } = req.body;
     const sanitizedEmail = (email || '').toLowerCase().trim();
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    if (!sanitizedEmail || !emailRegex.test(sanitizedEmail)) {
+      res.status(400).json({
+        success: false,
+        message: 'Please enter a valid email address.',
+      });
+      return;
+    }
 
     const user = await User.findOne({ email: sanitizedEmail });
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { DiyaIcon, MandalaCorner } from '../../components/layout/IndianMotifs';
@@ -13,8 +13,9 @@ import {
   EyeOff,
   CheckCircle2,
   AlertCircle,
-  Sparkles,
 } from 'lucide-react';
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -26,11 +27,78 @@ export const LoginPage: React.FC = () => {
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
+  // Field-level inline validation errors
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+
+  // General server/auth error banner
+  const [generalError, setGeneralError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Input refs for automatic focusing on validation errors
+  const emailInputRef = useRef<HTMLInputElement>(null);
+  const passwordInputRef = useRef<HTMLInputElement>(null);
 
   const from = (location.state as any)?.from?.pathname;
+
+  // Validation Helpers
+  const validateEmailValue = (val: string): string | null => {
+    const trimmed = val.trim();
+    if (!trimmed) {
+      return 'Email address is required.';
+    }
+    if (!EMAIL_REGEX.test(trimmed)) {
+      return 'Please enter a valid email address.';
+    }
+    return null;
+  };
+
+  const validatePasswordValue = (val: string): string | null => {
+    if (!val) {
+      return 'Password is required.';
+    }
+    return null;
+  };
+
+  // Blur event handlers (Real-time validation on blur)
+  const handleEmailBlur = () => {
+    const err = validateEmailValue(email);
+    setEmailError(err);
+  };
+
+  const handlePasswordBlur = () => {
+    const err = validatePasswordValue(password);
+    setPasswordError(err);
+  };
+
+  // Change event handlers (Smoothly clear errors when corrected)
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setEmail(val);
+    if (emailError) {
+      // Re-validate to clear error immediately once corrected
+      const trimmed = val.trim();
+      if (trimmed && EMAIL_REGEX.test(trimmed)) {
+        setEmailError(null);
+      }
+    }
+    if (generalError) {
+      setGeneralError(null);
+    }
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setPassword(val);
+    if (passwordError && val) {
+      setPasswordError(null);
+    }
+    if (generalError) {
+      setGeneralError(null);
+    }
+  };
 
   const handleAuthSuccess = (authUser: any) => {
     setSuccessMessage(`Welcome back, ${authUser.name || 'Celebration Host'}!`);
@@ -47,8 +115,11 @@ export const LoginPage: React.FC = () => {
     }, 500);
   };
 
+  // Google OAuth flow
   const handleGoogleClick = async () => {
-    setError(null);
+    setGeneralError(null);
+    setEmailError(null);
+    setPasswordError(null);
     try {
       await triggerGoogleOAuthPopup({
         onSuccess: async (profile) => {
@@ -61,7 +132,7 @@ export const LoginPage: React.FC = () => {
             });
             handleAuthSuccess(authUser);
           } catch (loginErr: any) {
-            setError(loginErr.message || 'Google authentication failed');
+            setGeneralError(loginErr.message || 'Google authentication failed');
           }
         },
         onError: (err) => {
@@ -74,35 +145,59 @@ export const LoginPage: React.FC = () => {
     }
   };
 
+  // Forgot password flow with strict email pre-validation
+  const handleForgotPasswordClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const trimmed = email.trim();
+    if (!trimmed) {
+      setEmailError('Enter your email address first.');
+      emailInputRef.current?.focus();
+      return;
+    }
+    if (!EMAIL_REGEX.test(trimmed)) {
+      setEmailError('Please enter a valid email address.');
+      emailInputRef.current?.focus();
+      return;
+    }
+    navigate(`/forgot-password?email=${encodeURIComponent(trimmed.toLowerCase())}`);
+  };
+
+  // Form Submit Handler
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    setGeneralError(null);
     setSuccessMessage(null);
 
+    // 1. Validate Email
+    const eError = validateEmailValue(email);
+    // 2. Validate Password
+    const pError = validatePasswordValue(password);
+
+    setEmailError(eError);
+    setPasswordError(pError);
+
+    // If either email or password is invalid, STOP immediately and do NOT send API request
+    if (eError || pError) {
+      if (eError) {
+        emailInputRef.current?.focus();
+      } else if (pError) {
+        passwordInputRef.current?.focus();
+      }
+      return;
+    }
+
     const trimmedEmail = email.trim().toLowerCase();
-    if (!trimmedEmail) {
-      setError('Please enter your email address.');
-      return;
-    }
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    if (!emailRegex.test(trimmedEmail)) {
-      setError('Please enter a valid email address (e.g. name@example.com).');
-      return;
-    }
-    if (!password) {
-      setError('Please enter your password.');
-      return;
-    }
 
     setIsSubmitting(true);
     try {
-      // Authenticate against database via backend
+      // 3. Send authentication request to backend
       const authUser = await login(trimmedEmail, password, rememberMe);
       handleAuthSuccess(authUser);
     } catch (err: any) {
-      // Clear password on error and show clear error message
+      // Clear password on failed attempt to prevent brute force
       setPassword('');
-      setError(err.message || 'Invalid email or password. Please verify your credentials or register.');
+      // Generic security message to prevent account enumeration
+      setGeneralError(err.message || 'Invalid email or password.');
     } finally {
       setIsSubmitting(false);
     }
@@ -132,7 +227,10 @@ export const LoginPage: React.FC = () => {
 
         {/* Brand Header */}
         <div className="text-center space-y-2">
-          <Link to="/" className="inline-flex p-3 rounded-2xl bg-gradient-to-br from-utsav-maroon-800 to-utsav-maroon-900 border border-utsav-gold shadow-lg group hover:scale-105 transition-transform duration-300">
+          <Link
+            to="/"
+            className="inline-flex p-3 rounded-2xl bg-gradient-to-br from-utsav-maroon-800 to-utsav-maroon-900 border border-utsav-gold shadow-lg group hover:scale-105 transition-transform duration-300"
+          >
             <DiyaIcon className="w-8 h-8" />
           </Link>
           <div>
@@ -184,11 +282,11 @@ export const LoginPage: React.FC = () => {
           <div className="flex-grow border-t border-utsav-gold/30"></div>
         </div>
 
-        {/* Error Notification */}
-        {error && (
+        {/* General Error Banner (Wrong password / Server lockout / Network errors) */}
+        {generalError && (
           <div className="p-3.5 rounded-xl bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-300 text-xs font-medium border border-red-200 dark:border-red-800 flex items-center space-x-2 animate-in fade-in duration-150">
             <AlertCircle className="w-4 h-4 shrink-0 text-red-600 dark:text-red-400" />
-            <span>{error}</span>
+            <span>{generalError}</span>
           </div>
         )}
 
@@ -201,57 +299,89 @@ export const LoginPage: React.FC = () => {
         )}
 
         {/* Login Credentials Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Email Address */}
+        <form onSubmit={handleSubmit} noValidate className="space-y-4">
+          {/* Email Address Field */}
           <div>
             <label className="block text-xs font-bold text-utsav-maroon-800 dark:text-utsav-gold uppercase tracking-wider mb-1.5">
               Email Address
             </label>
             <div className="relative">
-              <Mail className="w-4 h-4 text-utsav-gold absolute left-3.5 top-3.5" />
+              <Mail className={`w-4 h-4 absolute left-3.5 top-3.5 transition-colors ${
+                emailError ? 'text-red-500' : 'text-utsav-gold'
+              }`} />
               <input
+                ref={emailInputRef}
                 type="email"
-                required
+                autoComplete="email"
+                inputMode="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={handleEmailChange}
+                onBlur={handleEmailBlur}
                 placeholder="name@example.com"
-                className="w-full pl-10 pr-3.5 py-3 rounded-xl bg-white dark:bg-utsav-maroon-900 border border-utsav-gold/40 text-xs sm:text-sm text-utsav-brown dark:text-utsav-ivory placeholder-gray-400 focus:outline-none focus:border-utsav-gold focus:ring-2 focus:ring-utsav-gold/30 shadow-inner transition-all"
+                className={`w-full pl-10 pr-3.5 py-3 rounded-xl bg-white dark:bg-utsav-maroon-900 border text-xs sm:text-sm text-utsav-brown dark:text-utsav-ivory placeholder-gray-400 focus:outline-none shadow-inner transition-all ${
+                  emailError
+                    ? 'border-red-500 ring-2 ring-red-500/20 dark:border-red-500'
+                    : 'border-utsav-gold/40 focus:border-utsav-gold focus:ring-2 focus:ring-utsav-gold/30'
+                }`}
               />
             </div>
+            {/* Inline Email Error Message */}
+            {emailError && (
+              <p className="mt-1.5 text-xs text-red-600 dark:text-red-400 font-medium flex items-center space-x-1 animate-in fade-in duration-150">
+                <span className="font-bold text-sm">⚠</span>
+                <span>{emailError}</span>
+              </p>
+            )}
           </div>
 
-          {/* Password */}
+          {/* Password Field */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="block text-xs font-bold text-utsav-maroon-800 dark:text-utsav-gold uppercase tracking-wider">
                 Password
               </label>
-              <Link
-                to="/forgot-password"
-                className="text-xs font-semibold text-utsav-maroon-800 dark:text-utsav-gold hover:underline transition-colors"
+              <button
+                type="button"
+                onClick={handleForgotPasswordClick}
+                className="text-xs font-semibold text-utsav-maroon-800 dark:text-utsav-gold hover:underline transition-colors cursor-pointer"
               >
                 Forgot Password?
-              </Link>
+              </button>
             </div>
             <div className="relative">
-              <Lock className="w-4 h-4 text-utsav-gold absolute left-3.5 top-3.5" />
+              <Lock className={`w-4 h-4 absolute left-3.5 top-3.5 transition-colors ${
+                passwordError ? 'text-red-500' : 'text-utsav-gold'
+              }`} />
               <input
+                ref={passwordInputRef}
                 type={showPassword ? 'text' : 'password'}
-                required
+                autoComplete="current-password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={handlePasswordChange}
+                onBlur={handlePasswordBlur}
                 placeholder="••••••••"
-                className="w-full pl-10 pr-10 py-3 rounded-xl bg-white dark:bg-utsav-maroon-900 border border-utsav-gold/40 text-xs sm:text-sm text-utsav-brown dark:text-utsav-ivory placeholder-gray-400 focus:outline-none focus:border-utsav-gold focus:ring-2 focus:ring-utsav-gold/30 shadow-inner transition-all"
+                className={`w-full pl-10 pr-10 py-3 rounded-xl bg-white dark:bg-utsav-maroon-900 border text-xs sm:text-sm text-utsav-brown dark:text-utsav-ivory placeholder-gray-400 focus:outline-none shadow-inner transition-all ${
+                  passwordError
+                    ? 'border-red-500 ring-2 ring-red-500/20 dark:border-red-500'
+                    : 'border-utsav-gold/40 focus:border-utsav-gold focus:ring-2 focus:ring-utsav-gold/30'
+                }`}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-3.5 text-gray-400 hover:text-utsav-gold transition-colors"
+                className="absolute right-3 top-3.5 text-gray-400 hover:text-utsav-gold transition-colors cursor-pointer"
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
+            {/* Inline Password Error Message */}
+            {passwordError && (
+              <p className="mt-1.5 text-xs text-red-600 dark:text-red-400 font-medium flex items-center space-x-1 animate-in fade-in duration-150">
+                <span className="font-bold text-sm">⚠</span>
+                <span>{passwordError}</span>
+              </p>
+            )}
           </div>
 
           {/* Remember Me Checkbox */}
@@ -263,7 +393,10 @@ export const LoginPage: React.FC = () => {
               onChange={(e) => setRememberMe(e.target.checked)}
               className="w-4 h-4 text-utsav-maroon-800 border-utsav-gold/60 rounded focus:ring-utsav-gold dark:bg-utsav-maroon-900 accent-utsav-maroon-800 cursor-pointer"
             />
-            <label htmlFor="remember-me" className="ml-2 block text-xs text-utsav-brown-700 dark:text-utsav-ivory-300 font-medium cursor-pointer">
+            <label
+              htmlFor="remember-me"
+              className="ml-2 block text-xs text-utsav-brown-700 dark:text-utsav-ivory-300 font-medium cursor-pointer"
+            >
               Remember me for 30 days
             </label>
           </div>
