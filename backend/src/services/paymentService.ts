@@ -1,13 +1,19 @@
 import crypto from 'crypto';
 import mongoose from 'mongoose';
+import Razorpay from 'razorpay';
 import { Payment } from '../models/Payment';
 import { Booking } from '../models/Booking';
 import { Event } from '../models/Event';
 import { IPayment, PaymentStatus } from '../shared/types';
 
 export class PaymentService {
-  private static keyId = process.env.RAZORPAY_KEY_ID || 'rzp_test_utsavmitra2026demo';
-  private static keySecret = process.env.RAZORPAY_KEY_SECRET || 'utsavmitra_rzp_secret_key_2026';
+  private static getKeyId(): string {
+    return process.env.RAZORPAY_KEY_ID || 'rzp_test_utsavmitra2026demo';
+  }
+
+  private static getKeySecret(): string {
+    return process.env.RAZORPAY_KEY_SECRET || 'utsavmitra_rzp_secret_key_2026';
+  }
 
   /**
    * Create Razorpay Order or Demo Simulation Order
@@ -32,9 +38,45 @@ export class PaymentService {
     const taxRate = 0.18; // 18% GST standard for event services
     const taxAmount = Math.round(rawAmount * taxRate);
     const totalAmount = rawAmount + taxAmount;
+    const currentKeyId = this.getKeyId();
+    const currentKeySecret = this.getKeySecret();
 
-    // Generate unique order ID
-    const orderId = `order_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 7)}`;
+    // Default unique order ID
+    let orderId = `order_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 7)}`;
+    let isSimulation = true;
+
+    // Try creating real order if real Razorpay credentials exist
+    if (
+      currentKeyId &&
+      currentKeySecret &&
+      !currentKeyId.includes('utsavmitra2026demo') &&
+      !currentKeySecret.includes('utsavmitra_rzp_secret')
+    ) {
+      try {
+        const razorpay = new Razorpay({
+          key_id: currentKeyId,
+          key_secret: currentKeySecret,
+        });
+
+        const rzpOrder: any = await razorpay.orders.create({
+          amount: Math.round(totalAmount * 100), // Razorpay accepts amount in paise
+          currency: 'INR',
+          receipt: `rcpt_${Date.now().toString().slice(-8)}`,
+          notes: {
+            serviceName: params.serviceName || 'UtsavMitra Celebration Escrow',
+            eventId: params.eventId || '',
+            bookingId: params.bookingId || '',
+          },
+        });
+
+        if (rzpOrder && rzpOrder.id) {
+          orderId = rzpOrder.id;
+          isSimulation = false;
+        }
+      } catch (err) {
+        console.warn('Live Razorpay order creation failed, falling back to simulated order:', err);
+      }
+    }
 
     const validEventId = params.eventId && mongoose.Types.ObjectId.isValid(params.eventId) ? params.eventId : undefined;
     const validUserId = params.userId && mongoose.Types.ObjectId.isValid(params.userId) ? params.userId : undefined;
@@ -61,9 +103,9 @@ export class PaymentService {
       orderId,
       amount: totalAmount,
       currency: 'INR',
-      keyId: this.keyId,
+      keyId: currentKeyId,
       paymentRecordId: payment._id.toString(),
-      isSimulation: this.keyId.startsWith('rzp_test_utsavmitra') || true,
+      isSimulation,
     };
   }
 
@@ -120,9 +162,10 @@ export class PaymentService {
     let isValid = false;
 
     // If using real Razorpay signature
-    if (params.razorpaySignature && this.keySecret && params.razorpayOrderId && params.razorpayPaymentId) {
+    const secret = this.getKeySecret();
+    if (params.razorpaySignature && secret && params.razorpayOrderId && params.razorpayPaymentId) {
       const generatedSignature = crypto
-        .createHmac('sha256', this.keySecret)
+        .createHmac('sha256', secret)
         .update(`${params.razorpayOrderId}|${params.razorpayPaymentId}`)
         .digest('hex');
 

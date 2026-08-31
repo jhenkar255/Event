@@ -34,6 +34,21 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
   const baseAmount = Math.round(amount / 1.18);
   const gstAmount = amount - baseAmount;
 
+  const loadRazorpayScript = (): Promise<boolean> => {
+    return new Promise((resolve) => {
+      if ((window as any).Razorpay) {
+        resolve(true);
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
   const handlePayNow = async () => {
     setIsProcessing(true);
     try {
@@ -65,11 +80,85 @@ export const RazorpayCheckoutModal: React.FC<RazorpayCheckoutModalProps> = ({
 
       const orderId = orderRes.orderId || `order_${Date.now()}`;
       const paymentRecordId = orderRes.paymentRecordId;
+      const keyId = orderRes.keyId || import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_test_utsavmitra2026demo';
 
       const normalizedMethod =
         method === 'netbanking' ? 'NET_BANKING' : method === 'card' ? 'CARD' : 'UPI';
 
-      // 2. Simulate Razorpay payment gateway verification
+      const scriptLoaded = await loadRazorpayScript();
+
+      // If Razorpay SDK is loaded and it's a real live/test key from Razorpay
+      if (scriptLoaded && (window as any).Razorpay && keyId && !keyId.includes('utsavmitra2026demo')) {
+        const options = {
+          key: keyId,
+          amount: Math.round(amount * 100), // in paise
+          currency: 'INR',
+          name: 'UtsavMitra Celebrations',
+          description: purpose || 'Event Escrow Payment',
+          image: '/logo.png',
+          order_id: orderId.startsWith('order_') && !orderId.includes('mock') ? orderId : undefined,
+          handler: async (response: any) => {
+            try {
+              const verifyRes: any = await api.post('/payments/verify', {
+                razorpay_order_id: response.razorpay_order_id || orderId,
+                razorpayOrderId: response.razorpay_order_id || orderId,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                paymentRecordId,
+                bookingId,
+                eventId,
+                amount,
+                purpose,
+                paymentMethod: normalizedMethod,
+                method: normalizedMethod,
+              });
+
+              if (verifyRes.success || verifyRes.payment) {
+                setPaidReceipt(verifyRes.payment || { transactionId: response.razorpay_payment_id });
+                setPaymentDone(true);
+                if (onPaymentSuccess) onPaymentSuccess(verifyRes.payment);
+
+                confetti({
+                  particleCount: 70,
+                  spread: 80,
+                  origin: { y: 0.6 },
+                  colors: ['#C9A227', '#F4A340', '#7A1F2B'],
+                });
+              } else {
+                throw new Error(verifyRes.message || 'Signature verification failed.');
+              }
+            } catch (err: any) {
+              alert(err.message || 'Payment verification failed.');
+            } finally {
+              setIsProcessing(false);
+            }
+          },
+          prefill: {
+            name: 'Celebration Host',
+            email: 'host@utsavmitra.in',
+            contact: '+919876543210',
+          },
+          theme: {
+            color: '#7A1F2B',
+          },
+          modal: {
+            ondismiss: () => {
+              setIsProcessing(false);
+            },
+          },
+        };
+
+        const rzp = new (window as any).Razorpay(options);
+        rzp.on('payment.failed', function (response: any) {
+          alert('Payment Failed: ' + (response.error?.description || 'Transaction declined'));
+          setIsProcessing(false);
+        });
+        rzp.open();
+        return;
+      }
+
+      // Fallback / Instant Verification for Test Sandbox Simulation
       const verifyRes: any = await api.post('/payments/verify', {
         razorpay_order_id: orderId,
         razorpayOrderId: orderId,
