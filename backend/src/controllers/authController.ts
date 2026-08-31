@@ -505,7 +505,25 @@ export const updateProfile = async (req: AuthRequest, res: Response): Promise<vo
 // ==========================================
 export const googleAuth = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email, name, picture, role } = req.body;
+    let email = req.body.email;
+    let name = req.body.name;
+    let picture = req.body.picture;
+    const role = req.body.role;
+
+    // Decode Google ID Token if passed from Google Identity Services
+    if (req.body.credential) {
+      try {
+        const decoded: any = jwt.decode(req.body.credential);
+        if (decoded && decoded.email) {
+          email = decoded.email;
+          name = decoded.name || name;
+          picture = decoded.picture || picture;
+        }
+      } catch (err) {
+        console.warn('Could not parse Google credential token:', err);
+      }
+    }
+
     const sanitizedEmail = (email || '').toLowerCase().trim();
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

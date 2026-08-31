@@ -1,7 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { X, CheckCircle2, AlertCircle, Sparkles, Mail, User, ShieldCheck } from 'lucide-react';
+import { X, CheckCircle2, AlertCircle, Sparkles, Mail, User, ShieldCheck, ExternalLink, KeyRound } from 'lucide-react';
 import { DiyaIcon, MandalaCorner } from '../layout/IndianMotifs';
+
+declare global {
+  interface Window {
+    google?: any;
+  }
+}
 
 interface GoogleAuthModalProps {
   isOpen: boolean;
@@ -42,6 +48,63 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = ({
   const [isCustomMode, setIsCustomMode] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const googleButtonRef = useRef<HTMLDivElement>(null);
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+
+  useEffect(() => {
+    if (!isOpen || !googleClientId) return;
+
+    // Load Google Identity Services SDK dynamically if not loaded
+    const scriptId = 'google-gsi-client';
+    let script = document.getElementById(scriptId) as HTMLScriptElement | null;
+
+    const initializeGsi = () => {
+      if (window.google?.accounts?.id && googleButtonRef.current) {
+        window.google.accounts.id.initialize({
+          client_id: googleClientId,
+          callback: async (response: any) => {
+            if (response.credential) {
+              setLoading(true);
+              setError(null);
+              try {
+                const user = await googleLogin({
+                  credential: response.credential,
+                  role,
+                });
+                onSuccess(user);
+                onClose();
+              } catch (err: any) {
+                setError(err.message || 'Google OAuth verification failed.');
+              } finally {
+                setLoading(false);
+              }
+            }
+          },
+        });
+
+        window.google.accounts.id.renderButton(googleButtonRef.current, {
+          theme: 'outline',
+          size: 'large',
+          text: mode === 'register' ? 'signup_with' : 'signin_with',
+          shape: 'pill',
+          width: 320,
+        });
+      }
+    };
+
+    if (!script) {
+      script = document.createElement('script');
+      script.id = scriptId;
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
+      script.defer = true;
+      script.onload = initializeGsi;
+      document.body.appendChild(script);
+    } else {
+      initializeGsi();
+    }
+  }, [isOpen, googleClientId, role, mode]);
 
   if (!isOpen) return null;
 
@@ -103,7 +166,7 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = ({
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-utsav-maroon-900 transition-colors z-10"
+          className="absolute top-4 right-4 p-2 rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-utsav-maroon-900 transition-colors z-10 cursor-pointer"
         >
           <X className="w-5 h-5" />
         </button>
@@ -135,9 +198,21 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = ({
             {mode === 'register' ? 'Register with Google' : 'Sign in with Google'}
           </h2>
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            Choose a verified Google account to continue to UtsavMitra
+            Powered by Google Cloud Console & Google Identity Services
           </p>
         </div>
+
+        {/* Real Google Cloud Console Rendered Button (if Client ID is set) */}
+        {googleClientId && (
+          <div className="flex flex-col items-center justify-center p-2 rounded-2xl bg-gray-50 dark:bg-utsav-maroon-900/40 border border-utsav-gold/30 space-y-2">
+            <div ref={googleButtonRef} className="w-full flex justify-center" />
+            <div className="relative w-full text-center my-1">
+              <span className="text-[10px] uppercase font-bold text-gray-400 bg-white dark:bg-utsav-maroon-950 px-2">
+                or choose account below
+              </span>
+            </div>
+          </div>
+        )}
 
         {error && (
           <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-300 text-xs font-medium border border-red-200 dark:border-red-800 flex items-center space-x-2">
@@ -241,10 +316,10 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = ({
           </form>
         )}
 
-        <div className="pt-2 text-center">
+        <div className="pt-2 text-center space-y-1">
           <p className="text-[10px] text-gray-400 flex items-center justify-center space-x-1">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-            <span>Secured via Google OAuth 2.0 & UtsavMitra Vault</span>
+            <span>Google Cloud Console OAuth 2.0 & UtsavMitra Vault</span>
           </p>
         </div>
       </div>

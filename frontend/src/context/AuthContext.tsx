@@ -12,9 +12,10 @@ interface AuthContextType {
   isUser: boolean;
   login: (email: string, password?: string, rememberMe?: boolean) => Promise<IUser>;
   googleLogin: (googleData: {
-    email: string;
+    email?: string;
     name?: string;
     picture?: string;
+    credential?: string;
     role?: 'USER' | 'ORGANIZER';
   }) => Promise<IUser>;
   adminLogin: (email: string, password?: string, rememberMe?: boolean) => Promise<IUser>;
@@ -110,9 +111,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Google OAuth Login / Registration
   const googleLogin = async (googleData: {
-    email: string;
+    email?: string;
     name?: string;
     picture?: string;
+    credential?: string;
     role?: 'USER' | 'ORGANIZER';
   }): Promise<IUser> => {
     setIsLoading(true);
