@@ -142,7 +142,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenAiWizard }) => {
 
           {/* Desktop Navigation Links - Rendered After Login */}
           {isAuthenticated ? (
-            <nav className="hidden lg:flex items-center space-x-0.5 xl:space-x-1.5 animate-in fade-in duration-200">
+            <nav className="hidden lg:flex items-center space-x-0.5 xl:space-x-1 animate-in fade-in duration-200">
               {authenticatedNavLinks.map((item) => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.path;
@@ -150,7 +150,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenAiWizard }) => {
                   <Link
                     key={item.label}
                     to={item.path}
-                    className={`flex items-center space-x-1 px-2 xl:px-3 py-1.5 xl:py-2 rounded-lg text-xs xl:text-sm font-medium transition-all duration-150 whitespace-nowrap ${
+                    className={`flex items-center space-x-1 px-2 xl:px-2.5 py-1.5 rounded-lg text-xs xl:text-sm font-medium transition-all duration-150 whitespace-nowrap ${
                       isActive
                         ? 'bg-utsav-maroon-800 text-utsav-gold shadow-sm border border-utsav-gold/40'
                         : 'text-utsav-brown-800 dark:text-utsav-ivory-200 hover:bg-utsav-beige-200 dark:hover:bg-utsav-maroon-900/60'
@@ -159,7 +159,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenAiWizard }) => {
                     <Icon className="w-3.5 h-3.5 xl:w-4 xl:h-4 text-utsav-saffron-500 shrink-0" />
                     <span>{item.label}</span>
                     {item.badge && (
-                      <span className="hidden xl:inline text-[9px] px-1.5 py-0.2 rounded-full bg-utsav-saffron text-utsav-maroon-950 font-bold uppercase shrink-0">
+                      <span className="hidden 2xl:inline text-[9px] px-1.5 py-0.2 rounded-full bg-utsav-saffron text-utsav-maroon-950 font-bold uppercase shrink-0">
                         {item.badge}
                       </span>
                     )}
@@ -171,7 +171,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenAiWizard }) => {
               <div className="relative" ref={servicesDropdownRef}>
                 <button
                   onClick={() => setServicesDropdownOpen(!servicesDropdownOpen)}
-                  className="flex items-center space-x-1 px-2 xl:px-2.5 py-1.5 xl:py-2 rounded-lg text-xs xl:text-sm font-medium text-utsav-brown-800 dark:text-utsav-ivory-200 hover:bg-utsav-beige-200 dark:hover:bg-utsav-maroon-900/60 transition-colors whitespace-nowrap"
+                  className="flex items-center space-x-1 px-2 xl:px-2.5 py-1.5 rounded-lg text-xs xl:text-sm font-medium text-utsav-brown-800 dark:text-utsav-ivory-200 hover:bg-utsav-beige-200 dark:hover:bg-utsav-maroon-900/60 transition-colors whitespace-nowrap"
                 >
                   <span>Services</span>
                   <ChevronDown className="w-3 h-3 xl:w-3.5 xl:h-3.5 text-utsav-gold shrink-0" />
@@ -207,26 +207,26 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenAiWizard }) => {
           )}
 
           {/* Action Buttons & Profile Controls */}
-          <div className="hidden lg:flex items-center space-x-1.5 xl:space-x-2.5 shrink-0">
+          <div className="hidden lg:flex items-center space-x-1 xl:space-x-2 shrink-0">
             {/* Dark / Light Toggle */}
             <button
               onClick={toggleTheme}
               aria-label="Toggle Theme"
-              className="p-1.5 xl:p-2 rounded-lg text-utsav-brown-700 dark:text-utsav-gold hover:bg-utsav-beige-200 dark:hover:bg-utsav-maroon-900 transition-colors shrink-0"
+              className="p-1.5 rounded-lg text-utsav-brown-700 dark:text-utsav-gold hover:bg-utsav-beige-200 dark:hover:bg-utsav-maroon-900 transition-colors shrink-0"
             >
-              {theme === 'dark' ? <Sun className="w-4 h-4 xl:w-5 xl:h-5" /> : <Moon className="w-4 h-4 xl:w-5 xl:h-5" />}
+              {theme === 'dark' ? <Sun className="w-4 h-4 xl:w-4.5 xl:h-4.5" /> : <Moon className="w-4 h-4 xl:w-4.5 xl:h-4.5" />}
             </button>
 
             {/* Notifications (Logged In Only) */}
             {isAuthenticated && (
               <Link
                 to="/notifications"
-                className="relative p-1.5 xl:p-2 rounded-lg text-utsav-brown-700 dark:text-utsav-ivory hover:bg-utsav-beige-200 dark:hover:bg-utsav-maroon-900 transition-colors shrink-0"
+                className="relative p-1.5 rounded-lg text-utsav-brown-700 dark:text-utsav-ivory hover:bg-utsav-beige-200 dark:hover:bg-utsav-maroon-900 transition-colors shrink-0"
                 aria-label="Notifications"
               >
-                <Bell className="w-4 h-4 xl:w-5 xl:h-5 text-utsav-gold" />
+                <Bell className="w-4 h-4 xl:w-4.5 xl:h-4.5 text-utsav-gold" />
                 {unreadNotifications > 0 && (
-                  <span className="absolute top-0.5 right-0.5 flex items-center justify-center w-3.5 h-3.5 xl:w-4 xl:h-4 bg-utsav-saffron text-utsav-maroon-950 font-bold text-[9px] xl:text-[10px] rounded-full shadow">
+                  <span className="absolute top-0.5 right-0.5 flex items-center justify-center w-3.5 h-3.5 bg-utsav-saffron text-utsav-maroon-950 font-bold text-[9px] rounded-full shadow">
                     {unreadNotifications}
                   </span>
                 )}
@@ -237,11 +237,11 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenAiWizard }) => {
             {isAuthenticated && !isProfilePage && !isAdmin && (
               <Link
                 to="/events/create"
-                className="flex items-center space-x-1 px-2.5 xl:px-3.5 py-1.5 xl:py-2 rounded-xl maroon-gradient-btn font-semibold text-xs xl:text-sm shadow-md text-utsav-gold hover:scale-105 transition-transform shrink-0 whitespace-nowrap"
+                className="flex items-center space-x-1 px-2.5 xl:px-3 py-1.5 rounded-xl maroon-gradient-btn font-semibold text-xs xl:text-sm shadow-md text-utsav-gold hover:scale-105 transition-transform shrink-0 whitespace-nowrap"
               >
-                <PlusCircle className="w-3.5 h-3.5 xl:w-4 xl:h-4 shrink-0" />
+                <PlusCircle className="w-3.5 h-3.5 shrink-0" />
                 <span className="hidden xl:inline">+ Create Event</span>
-                <span className="xl:hidden">Create</span>
+                <span className="xl:hidden">+ Event</span>
               </Link>
             )}
 
@@ -253,7 +253,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenAiWizard }) => {
                   className={`flex items-center space-x-1.5 py-1 px-2 xl:px-2.5 rounded-full transition-all cursor-pointer shrink-0 ${
                     isAdmin
                       ? 'bg-gradient-to-r from-red-950 via-utsav-maroon-900 to-black border border-amber-400/80 shadow-md hover:ring-2 hover:ring-amber-400/50'
-                      : 'border border-utsav-gold/60 hover:ring-2 hover:ring-utsav-gold/40'
+                      : 'bg-white/60 dark:bg-utsav-maroon-900/80 border border-utsav-gold/60 shadow-sm hover:ring-2 hover:ring-utsav-gold/40'
                   }`}
                 >
                   <div className="relative shrink-0">
@@ -263,7 +263,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenAiWizard }) => {
                         'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80'
                       }
                       alt={user.name}
-                      className="w-7 h-7 xl:w-8 xl:h-8 rounded-full object-cover border border-amber-400 shrink-0"
+                      className="w-7 h-7 xl:w-7.5 xl:h-7.5 rounded-full object-cover border border-amber-400 shrink-0"
                     />
                     {isAdmin && (
                       <span className="absolute -top-1 -right-1 flex items-center justify-center w-3.5 h-3.5 bg-red-600 rounded-full border border-utsav-gold shadow">
@@ -272,7 +272,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenAiWizard }) => {
                     )}
                   </div>
                   <div className="flex flex-col text-left shrink-0">
-                    <span className="text-[11px] xl:text-xs font-bold text-utsav-brown dark:text-utsav-ivory max-w-[70px] sm:max-w-[85px] xl:max-w-[110px] truncate leading-tight">
+                    <span className="text-[11px] xl:text-xs font-bold text-utsav-brown dark:text-utsav-ivory max-w-[65px] xl:max-w-[90px] truncate leading-tight">
                       {user.name.split(' ')[0]}
                     </span>
                     {isAdmin ? (
@@ -285,7 +285,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenAiWizard }) => {
                       </span>
                     )}
                   </div>
-                  <ChevronDown className="w-3 h-3 xl:w-3.5 xl:h-3.5 text-utsav-gold shrink-0" />
+                  <ChevronDown className="w-3 h-3 text-utsav-gold shrink-0" />
                 </button>
 
                 {userDropdownOpen && (

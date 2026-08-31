@@ -167,7 +167,33 @@ export const EventsPage: React.FC = () => {
 
       {/* Events Grid */}
       {loading ? (
-        <div className="p-16 text-center text-gray-400">Loading celebrations...</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div
+              key={i}
+              className="rounded-3xl bg-utsav-ivory dark:bg-utsav-maroon-900 border border-utsav-gold/30 shadow-lg overflow-hidden flex flex-col h-[420px]"
+            >
+              {/* Banner Skeleton */}
+              <div className="h-48 w-full bg-utsav-beige-200 dark:bg-utsav-maroon-950/80 relative overflow-hidden">
+                <div className="absolute top-3 left-3 w-20 h-6 rounded-full bg-utsav-gold/30" />
+                <div className="absolute bottom-3 left-3 w-28 h-5 rounded-lg bg-utsav-gold/20" />
+              </div>
+              {/* Content Skeleton */}
+              <div className="p-5 flex-1 flex flex-col justify-between space-y-3">
+                <div className="space-y-2">
+                  <div className="h-5 w-3/4 bg-utsav-beige-200 dark:bg-utsav-maroon-950 rounded-md" />
+                  <div className="h-3.5 w-1/2 bg-utsav-beige-200/70 dark:bg-utsav-maroon-950/60 rounded-md" />
+                </div>
+                <div className="h-14 w-full rounded-2xl bg-utsav-beige-100 dark:bg-utsav-maroon-950/60 border border-utsav-gold/20" />
+                <div className="h-3 w-full rounded-full bg-utsav-beige-200 dark:bg-utsav-maroon-950" />
+                <div className="flex justify-between pt-2">
+                  <div className="h-7 w-20 rounded-xl bg-utsav-beige-200 dark:bg-utsav-maroon-950" />
+                  <div className="h-7 w-20 rounded-xl bg-utsav-beige-200 dark:bg-utsav-maroon-950" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       ) : events.length === 0 ? (
         <div className="p-8 sm:p-12 text-center bg-utsav-ivory dark:bg-utsav-maroon-900/90 rounded-3xl border-2 border-utsav-gold/50 shadow-xl space-y-6">
           <div className="w-16 h-16 rounded-full bg-utsav-beige-200 dark:bg-utsav-maroon-950 border-2 border-utsav-gold flex items-center justify-center mx-auto text-utsav-gold shadow-md">
