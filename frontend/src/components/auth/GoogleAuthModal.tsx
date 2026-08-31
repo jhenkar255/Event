@@ -72,7 +72,18 @@ export const GoogleAuthModal: React.FC<GoogleAuthModalProps> = ({
     const trimmedEmail = customEmail.trim().toLowerCase();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!trimmedEmail || !emailRegex.test(trimmedEmail)) {
-      setError('Please enter a valid Google / Gmail email address.');
+      setError('Please enter a valid Google / Gmail email address (e.g. name@gmail.com).');
+      return;
+    }
+
+    if (!trimmedEmail.endsWith('@gmail.com') && !trimmedEmail.endsWith('@googlemail.com')) {
+      setError('Invalid Google account. Only valid @gmail.com addresses can sign in with Google.');
+      return;
+    }
+
+    const [localPart] = trimmedEmail.split('@');
+    if (!localPart || localPart.length < 3) {
+      setError('Invalid Gmail address. Username before @gmail.com must be at least 3 characters.');
       return;
     }
 

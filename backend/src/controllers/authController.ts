@@ -554,6 +554,25 @@ export const googleAuth = async (req: Request, res: Response): Promise<void> => 
       return;
     }
 
+    // Ensure valid Google Account (@gmail.com, @googlemail.com, or verified Google token)
+    const isGoogleDomain = sanitizedEmail.endsWith('@gmail.com') || sanitizedEmail.endsWith('@googlemail.com');
+    if (!isGoogleDomain && !req.body.credential) {
+      res.status(400).json({
+        success: false,
+        message: 'Invalid Google account. Only valid Google / Gmail addresses (@gmail.com) are permitted to sign in with Google.',
+      });
+      return;
+    }
+
+    const [localPart] = sanitizedEmail.split('@');
+    if (isGoogleDomain && (!localPart || localPart.length < 3)) {
+      res.status(400).json({
+        success: false,
+        message: 'Invalid Gmail username. Please enter a valid Gmail address with at least 3 characters.',
+      });
+      return;
+    }
+
     let user = await User.findOne({ email: sanitizedEmail });
 
     if (!user) {

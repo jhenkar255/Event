@@ -351,9 +351,9 @@ describe('UTSAVMITRA RBAC & Authentication Architecture Test Suite (20 Test Case
     expect(invalidLogin.body.message).toContain('valid email');
   });
 
-  // 22. Google OAuth endpoint authenticates and auto-registers Google users
+  // 22. Google OAuth endpoint authenticates and auto-registers valid Google users
   test('22. POST /api/auth/google authenticates Google user and returns token', async () => {
-    const googleEmail = `google_${Date.now()}@testauth.utsav`;
+    const googleEmail = `google_${Date.now()}@gmail.com`;
     const res = await request(app).post('/api/auth/google').send({
       email: googleEmail,
       name: 'Google Celebration Host',
@@ -367,5 +367,24 @@ describe('UTSAVMITRA RBAC & Authentication Architecture Test Suite (20 Test Case
     expect(res.body.user.email).toBe(googleEmail);
     expect(res.body.user.name).toBe('Google Celebration Host');
     expect(res.body.user.emailVerified).toBe(true);
+  });
+
+  // 23. Google OAuth endpoint rejects invalid/non-Google accounts
+  test('23. POST /api/auth/google rejects non-Google / invalid emails with 400', async () => {
+    const invalidRes = await request(app).post('/api/auth/google').send({
+      email: 'user_not_google@yahoo.com',
+      name: 'Invalid User',
+    });
+
+    expect(invalidRes.status).toBe(400);
+    expect(invalidRes.body.success).toBe(false);
+    expect(invalidRes.body.message).toContain('Invalid Google account');
+
+    const malformedRes = await request(app).post('/api/auth/google').send({
+      email: 'ab@gmail.com', // username < 3 chars
+      name: 'Short User',
+    });
+    expect(malformedRes.status).toBe(400);
+    expect(malformedRes.body.success).toBe(false);
   });
 });
