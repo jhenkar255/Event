@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Radio, Users, Bell, Send, Clock, Volume2, ShieldCheck, Sparkles } from 'lucide-react';
+import { Radio, Users, Bell, Send, Clock, Volume2, ShieldCheck, Sparkles, ExternalLink } from 'lucide-react';
 import { ILiveStream } from '@shared/types';
 import { api } from '../../api/client';
 import { useSocket } from '../../context/SocketContext';
@@ -122,27 +122,53 @@ export const LiveStreamPlayer: React.FC<LiveStreamPlayerProps> = ({ eventId, isO
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Live Stream Video Player */}
         <div className="lg:col-span-2 space-y-3">
-          <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-black border-2 border-utsav-gold/50 shadow-2xl">
-            {(() => {
-              let url = stream?.streamUrl;
-              if (url && (url.includes('youtube.com') || url.includes('youtu.be'))) {
-                const match = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
-                if (match && match[1]) {
-                  url = `https://www.youtube-nocookie.com/embed/${match[1]}?autoplay=1&rel=0&modestbranding=1`;
-                }
+          {(() => {
+            let youtubeId = 'L_LUpnjgPso';
+            const rawUrl = stream?.streamUrl || '';
+            if (rawUrl) {
+              const match = rawUrl.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?|live)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
+              if (match && match[1]) {
+                youtubeId = match[1];
+              } else if (/^[a-zA-Z0-9_-]{11}$/.test(rawUrl.trim())) {
+                youtubeId = rawUrl.trim();
               }
-              const finalUrl = url || 'https://www.youtube-nocookie.com/embed/5qap5aO4i9A?autoplay=1&rel=0&modestbranding=1';
-              return (
-                <iframe
-                  src={finalUrl}
-                  title="Live Celebration Stream"
-                  className="w-full h-full"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
-              );
-            })()}
-          </div>
+            }
+
+            const embedUrl = `https://www.youtube.com/embed/${youtubeId}?autoplay=1&mute=0&enablejsapi=1&rel=0`;
+            const watchUrl = `https://www.youtube.com/watch?v=${youtubeId}`;
+
+            return (
+              <>
+                <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-black border-2 border-utsav-gold/50 shadow-2xl">
+                  <iframe
+                    key={youtubeId}
+                    src={embedUrl}
+                    title="Live Celebration Stream"
+                    className="w-full h-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                  />
+                </div>
+
+                <div className="flex items-center justify-between px-1 text-xs">
+                  <span className="text-[11px] text-gray-500 flex items-center space-x-1">
+                    <Volume2 className="w-3.5 h-3.5 text-utsav-gold" />
+                    <span>Click player to unmute audio if muted by browser policy.</span>
+                  </span>
+
+                  <a
+                    href={watchUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-bold text-red-600 hover:text-red-700 flex items-center space-x-1"
+                  >
+                    <span>Watch directly on YouTube</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                </div>
+              </>
+            );
+          })()}
         </div>
 
         {/* Live Announcements Ticker & Dispatcher */}
