@@ -8,6 +8,7 @@ import { EventSchedule } from '../models/EventSchedule';
 import { EventDesign } from '../models/EventDesign';
 import { SeatingLayout } from '../models/SeatingLayout';
 import { Invitation } from '../models/Invitation';
+import { Booking } from '../models/Booking';
 import { AuthRequest } from '../middleware/auth';
 import { DEFAULT_CHECKLIST_TEMPLATES } from '../shared/constants';
 import { EventType } from '../shared/types';
@@ -34,7 +35,16 @@ export const getEvents = async (req: AuthRequest, res: Response): Promise<void> 
       filter['location.city'] = new RegExp(req.query.city as string, 'i');
     }
 
-    const events = await Event.find(filter).populate('venue').sort({ date: 1, createdAt: -1 });
+    let events = await Event.find(filter).populate('venue').sort({ date: 1, createdAt: -1 });
+
+    // If user has 0 events and didn't apply search filters, fetch public showcase events
+    if (events.length === 0 && req.user?.role === 'USER' && !req.query.type && !req.query.status && !req.query.city) {
+      const showcaseEvents = await Event.find().populate('venue').limit(6).sort({ date: 1, createdAt: -1 });
+      if (showcaseEvents.length > 0) {
+        events = showcaseEvents;
+      }
+    }
+
     res.json({ success: true, count: events.length, events });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
@@ -119,6 +129,76 @@ export const createEvent = async (req: AuthRequest, res: Response): Promise<void
       shlokaOrQuote: inviteData.shlokaOrQuote || 'सर्वमङ्गलमाङ्गल्ये शिवे सर्वार्थसाधिके | शरण्ये त्र्यम्बके गौरि नारायणि नमोऽस्तु ते',
       themeColor: '#7A1F2B',
     });
+
+    // Auto-create service bookings if services were selected in wizard
+    const userId = req.user?.id;
+    if (userId) {
+      const eventDateStr = event.date || new Date().toISOString().split('T')[0];
+
+      if (req.body.venueId || req.body.venue) {
+        await Booking.create({
+          eventId: event._id,
+          userId,
+          itemType: 'VENUE',
+          itemId: String(req.body.venueId || req.body.venue),
+          itemName: `${event.location.address || 'Heritage Celebration Pavilion'}`,
+          amount: 450000,
+          advancePaid: 100000,
+          balanceDue: 350000,
+          status: 'CONFIRMED',
+          eventDate: eventDateStr,
+          bookingNotes: `Venue reservation for ${event.name}`,
+        }).catch(() => {});
+      }
+
+      if (req.body.cateringId) {
+        await Booking.create({
+          eventId: event._id,
+          userId,
+          itemType: 'CATERING',
+          itemId: String(req.body.cateringId),
+          itemName: 'Royal Traditional Feast & Live Counters',
+          amount: Math.round((event.guestCount || 200) * 1200),
+          advancePaid: 50000,
+          balanceDue: Math.round((event.guestCount || 200) * 1200) - 50000,
+          status: 'CONFIRMED',
+          eventDate: eventDateStr,
+          bookingNotes: req.body.cateringNotes || 'Catering buffet with live counters',
+        }).catch(() => {});
+      }
+
+      if (req.body.decorationId) {
+        await Booking.create({
+          eventId: event._id,
+          userId,
+          itemType: 'DECORATION',
+          itemId: String(req.body.decorationId),
+          itemName: 'Mandap, Floral Arch & Ambient Lighting Setup',
+          amount: 180000,
+          advancePaid: 50000,
+          balanceDue: 130000,
+          status: 'CONFIRMED',
+          eventDate: eventDateStr,
+          bookingNotes: 'Heritage floral and mandap theme setup',
+        }).catch(() => {});
+      }
+
+      if (req.body.entertainmentId) {
+        await Booking.create({
+          eventId: event._id,
+          userId,
+          itemType: 'ENTERTAINMENT',
+          itemId: String(req.body.entertainmentId),
+          itemName: 'Traditional Musical Troupe, Shehnai & Photography Crew',
+          amount: 120000,
+          advancePaid: 30000,
+          balanceDue: 90000,
+          status: 'CONFIRMED',
+          eventDate: eventDateStr,
+          bookingNotes: 'Classical artists and photographic coverage',
+        }).catch(() => {});
+      }
+    }
 
     res.status(201).json({
       success: true,

@@ -167,7 +167,47 @@ export const EventsPage: React.FC = () => {
 
       {/* Events Grid */}
       {loading ? (
-        <div className="p-16 text-center text-gray-400">Loading events...</div>
+        <div className="p-16 text-center text-gray-400">Loading celebrations...</div>
+      ) : events.length === 0 ? (
+        <div className="p-8 sm:p-12 text-center bg-utsav-ivory dark:bg-utsav-maroon-900/90 rounded-3xl border-2 border-utsav-gold/50 shadow-xl space-y-6">
+          <div className="w-16 h-16 rounded-full bg-utsav-beige-200 dark:bg-utsav-maroon-950 border-2 border-utsav-gold flex items-center justify-center mx-auto text-utsav-gold shadow-md">
+            <Sparkles className="w-8 h-8 text-utsav-gold animate-pulse" />
+          </div>
+
+          <div className="max-w-xl mx-auto space-y-2">
+            <h3 className="font-heading text-xl sm:text-2xl font-bold text-utsav-maroon-800 dark:text-utsav-gold">
+              Welcome to Auspicious Celebrations Hub
+            </h3>
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+              You have not created any cultural celebrations yet. Begin planning your royal wedding, sangeet, pooja ceremony, or anniversary with AI assistance and book authentic heritage services.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+            <Link
+              to="/events/create"
+              className="px-5 py-3 rounded-2xl maroon-gradient-btn text-xs sm:text-sm font-bold shadow-lg flex items-center space-x-2 text-utsav-gold"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span>+ Create Celebration</span>
+            </Link>
+
+            <button
+              onClick={() => setIsAiModalOpen(true)}
+              className="px-5 py-3 rounded-2xl gold-gradient-btn text-xs sm:text-sm font-bold shadow-lg flex items-center space-x-2 text-utsav-maroon-950"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>Plan with AI Wizard</span>
+            </button>
+
+            <Link
+              to="/venues"
+              className="px-5 py-3 rounded-2xl bg-white dark:bg-utsav-maroon-950 border border-utsav-gold/40 text-xs sm:text-sm font-bold shadow-sm hover:border-utsav-gold transition-colors text-utsav-brown dark:text-utsav-ivory"
+            >
+              <span>🏰 Explore Royal Venues</span>
+            </Link>
+          </div>
+        </div>
       ) : filteredEvents.length === 0 ? (
         <div className="p-12 text-center text-gray-500 bg-white/40 dark:bg-utsav-maroon-950/40 rounded-3xl border border-utsav-gold/30 space-y-3">
           <Calendar className="w-10 h-10 text-utsav-gold mx-auto" />

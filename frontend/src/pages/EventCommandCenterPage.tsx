@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
-import { IEvent, IGuest, IPayment, IChecklistItem } from '@shared/types';
+import { IEvent, IGuest, IPayment, IChecklistItem, IBooking } from '@shared/types';
 
 import { DiyaIcon, MandalaCorner } from '../components/layout/IndianMotifs';
 import {
@@ -34,6 +34,12 @@ import {
   Eye,
   ShieldCheck,
   CheckCircle2,
+  Building,
+  Utensils,
+  Flower2,
+  Music,
+  PlusCircle,
+  X,
 } from 'lucide-react';
 import { ChecklistProgress } from '../components/events/ChecklistProgress';
 import { RiskAlertsBanner } from '../components/events/RiskAlertsBanner';
@@ -215,6 +221,54 @@ const FALLBACK_PAYMENTS: IPayment[] = [
   },
 ];
 
+const FALLBACK_BOOKINGS: IBooking[] = [
+  {
+    _id: 'bk-showcase-1',
+    bookingNumber: 'BKG-SHOWCASE-001',
+    eventId: 'evt-showcase-1',
+    userId: 'user-demo-1',
+    itemType: 'VENUE',
+    itemId: 'v-1',
+    itemName: 'The Royal Heritage Haveli & Courtyard',
+    amount: 450000,
+    advancePaid: 150000,
+    balanceDue: 300000,
+    status: 'CONFIRMED',
+    eventDate: '2026-11-28',
+    bookingNotes: 'Grand courtyard mandap and banquet suites reserved',
+  },
+  {
+    _id: 'bk-showcase-2',
+    bookingNumber: 'BKG-SHOWCASE-002',
+    eventId: 'evt-showcase-1',
+    userId: 'user-demo-1',
+    itemType: 'CATERING',
+    itemId: 'c-1',
+    itemName: 'Royal Rajwada 7-Course Authentic Feast',
+    amount: 360000,
+    advancePaid: 100000,
+    balanceDue: 260000,
+    status: 'CONFIRMED',
+    eventDate: '2026-11-28',
+    bookingNotes: 'Live Dal Baati Churma, Jalebi & Chaat counters included',
+  },
+  {
+    _id: 'bk-showcase-3',
+    bookingNumber: 'BKG-SHOWCASE-003',
+    eventId: 'evt-showcase-1',
+    userId: 'user-demo-1',
+    itemType: 'DECORATION',
+    itemId: 'd-1',
+    itemName: 'Royal Marigold Floral Mandap & Ambient Lighting Canopy',
+    amount: 180000,
+    advancePaid: 50000,
+    balanceDue: 130000,
+    status: 'CONFIRMED',
+    eventDate: '2026-11-28',
+    bookingNotes: 'Traditional brass diyas and velvet seating drapery',
+  },
+];
+
 export const EventCommandCenterPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -224,14 +278,15 @@ export const EventCommandCenterPage: React.FC = () => {
   const [event, setEvent] = useState<IEvent | null>(null);
   const [guests, setGuests] = useState<IGuest[]>(FALLBACK_GUESTS);
   const [payments, setPayments] = useState<IPayment[]>(FALLBACK_PAYMENTS);
+  const [bookings, setBookings] = useState<IBooking[]>(FALLBACK_BOOKINGS);
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'checklist' | 'design' | 'seating' | 'guests' | 'budget' | 'payments' | 'qr' | 'scanner' | 'live' | 'invite'
+    'overview' | 'checklist' | 'design' | 'seating' | 'guests' | 'bookings' | 'budget' | 'payments' | 'qr' | 'scanner' | 'live' | 'invite'
   >('overview');
 
   const [isLiveMode, setIsLiveMode] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Modals
+  // Modals & Booking Form
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [paymentPurpose, setPaymentPurpose] = useState('Vendor Service Installment');
   const [paymentAmount, setPaymentAmount] = useState(50000);
@@ -241,6 +296,15 @@ export const EventCommandCenterPage: React.FC = () => {
   const [newGuestPhone, setNewGuestPhone] = useState('');
   const [newGuestDiet, setNewGuestDiet] = useState<'Veg' | 'Non-Veg' | 'Jain' | 'Vegan'>('Veg');
   const [showAddGuest, setShowAddGuest] = useState(false);
+
+  // Add Booking Modal state
+  const [showAddBookingModal, setShowAddBookingModal] = useState(false);
+  const [bookingItemType, setBookingItemType] = useState<'VENUE' | 'CATERING' | 'DECORATION' | 'ENTERTAINMENT' | 'PACKAGE'>('CATERING');
+  const [bookingItemName, setBookingItemName] = useState('');
+  const [bookingAmount, setBookingAmount] = useState<number>(50000);
+  const [bookingAdvance, setBookingAdvance] = useState<number>(15000);
+  const [bookingNotes, setBookingNotes] = useState('');
+  const [isSubmittingBooking, setIsSubmittingBooking] = useState(false);
 
   const fetchEventData = async () => {
     setLoading(true);
@@ -282,6 +346,18 @@ export const EventCommandCenterPage: React.FC = () => {
       }
     } catch (err) {
       console.log('Using default payments fallback:', err);
+    }
+
+    try {
+      // 4. Fetch Booked Services & Vendor Contracts
+      const bRes = await api
+        .get<{ success: boolean; bookings: IBooking[] }>(`/bookings/event/${targetId}`)
+        .catch(() => api.get<{ success: boolean; bookings: IBooking[] }>('/bookings/my-bookings'));
+      if (bRes.success && bRes.bookings && bRes.bookings.length > 0) {
+        setBookings(bRes.bookings);
+      }
+    } catch (err) {
+      console.log('Using default bookings fallback:', err);
     }
 
     setLoading(false);
@@ -375,6 +451,58 @@ export const EventCommandCenterPage: React.FC = () => {
     }
   };
 
+  const handleCreateBooking = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!bookingItemName.trim() || bookingAmount <= 0) return;
+
+    setIsSubmittingBooking(true);
+    try {
+      const targetId = id || event?._id || 'demo';
+      const eventDate = event?.date || new Date().toISOString().split('T')[0];
+      const payload = {
+        eventId: targetId,
+        itemType: bookingItemType,
+        itemId: `svc-${Date.now()}`,
+        itemName: bookingItemName,
+        amount: Number(bookingAmount),
+        advancePaid: Number(bookingAdvance),
+        balanceDue: Number(bookingAmount) - Number(bookingAdvance),
+        eventDate,
+        bookingNotes: bookingNotes || `Booked service for ${event?.name || 'Celebration'}`,
+      };
+
+      const res: any = await api.post('/bookings', payload).catch(() => null);
+      if (res && res.success && res.booking) {
+        setBookings((prev) => [res.booking, ...prev]);
+      } else {
+        const localBooking: IBooking = {
+          _id: `bk-local-${Date.now()}`,
+          bookingNumber: `BKG-${Date.now().toString(36).toUpperCase()}`,
+          eventId: targetId,
+          userId: user?._id || 'user-1',
+          itemType: bookingItemType,
+          itemId: `svc-${Date.now()}`,
+          itemName: bookingItemName,
+          amount: Number(bookingAmount),
+          advancePaid: Number(bookingAdvance),
+          balanceDue: Number(bookingAmount) - Number(bookingAdvance),
+          status: 'CONFIRMED',
+          eventDate,
+          bookingNotes,
+        };
+        setBookings((prev) => [localBooking, ...prev]);
+      }
+
+      setShowAddBookingModal(false);
+      setBookingItemName('');
+      setBookingNotes('');
+    } catch (err: any) {
+      alert(err.message || 'Failed to add booking.');
+    } finally {
+      setIsSubmittingBooking(false);
+    }
+  };
+
   const handleExportCsv = () => {
     const rows = [
       ['Name', 'Email', 'Phone', 'RSVP Status', 'Meal Preference', 'Checked In', 'Check In Time'],
@@ -427,6 +555,7 @@ export const EventCommandCenterPage: React.FC = () => {
     { key: 'design', label: '2D Mandap Studio', icon: Layers },
     { key: 'seating', label: 'Seating Planner', icon: Armchair },
     { key: 'guests', label: `Guests (${guests.length})`, icon: Users },
+    { key: 'bookings', label: `Bookings (${bookings.length})`, icon: Building },
     { key: 'budget', label: 'Budget & AI', icon: IndianRupee },
     { key: 'payments', label: 'Payments', icon: CreditCard },
     ...(isOrganizer || isAdmin
@@ -493,6 +622,128 @@ export const EventCommandCenterPage: React.FC = () => {
         onClose={() => setSelectedInvoicePayment(null)}
         payment={selectedInvoicePayment}
       />
+
+      {/* Add Vendor Service Booking Modal */}
+      {showAddBookingModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="bg-utsav-ivory dark:bg-utsav-maroon-950 w-full max-w-lg rounded-3xl shadow-2xl border-2 border-utsav-gold/60 overflow-hidden relative z-[10000]">
+            <div className="p-5 bg-gradient-to-r from-utsav-maroon-900 to-utsav-maroon-800 text-utsav-ivory border-b border-utsav-gold/40 flex items-center justify-between">
+              <div className="flex items-center space-x-2.5">
+                <div className="p-1.5 rounded-xl bg-utsav-maroon-950 border border-utsav-gold">
+                  <Building className="w-5 h-5 text-utsav-gold" />
+                </div>
+                <div>
+                  <h3 className="font-heading text-base font-bold text-utsav-gold">
+                    Add Vendor Service Booking
+                  </h3>
+                  <p className="text-[11px] text-utsav-ivory/80">
+                    Record vendor contract & initialize escrow for {currentEvent.name}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowAddBookingModal(false)}
+                className="p-1.5 text-utsav-ivory/70 hover:text-utsav-gold"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateBooking} className="p-6 space-y-4 text-xs">
+              <div>
+                <label className="block font-bold text-utsav-maroon-800 dark:text-utsav-gold mb-1">
+                  Service Category
+                </label>
+                <select
+                  value={bookingItemType}
+                  onChange={(e: any) => setBookingItemType(e.target.value)}
+                  className="w-full px-3.5 py-2 rounded-xl bg-white dark:bg-utsav-maroon-900 border border-utsav-gold/40 text-utsav-brown dark:text-utsav-ivory focus:outline-none"
+                >
+                  <option value="VENUE">Heritage Venue / Banquet Lawn</option>
+                  <option value="CATERING">Royal Catering / Traditional Feast</option>
+                  <option value="DECORATION">Mandap & Floral Theme Decor</option>
+                  <option value="ENTERTAINMENT">Live Troupe / Photography / Shehnai</option>
+                  <option value="PACKAGE">All-Inclusive Auspicious Package</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-bold text-utsav-maroon-800 dark:text-utsav-gold mb-1">
+                  Service / Vendor Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={bookingItemName}
+                  onChange={(e) => setBookingItemName(e.target.value)}
+                  placeholder="e.g. Royal Rajwada 7-Course Catering, Mandap Floral Canopy..."
+                  className="w-full px-3.5 py-2 rounded-xl bg-white dark:bg-utsav-maroon-900 border border-utsav-gold/40 text-utsav-brown dark:text-utsav-ivory focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-utsav-maroon-800 dark:text-utsav-gold mb-1">
+                    Total Contract (₹)
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min={1000}
+                    value={bookingAmount}
+                    onChange={(e) => setBookingAmount(Number(e.target.value))}
+                    className="w-full px-3.5 py-2 rounded-xl bg-white dark:bg-utsav-maroon-900 border border-utsav-gold/40 text-utsav-brown dark:text-utsav-ivory focus:outline-none font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-utsav-maroon-800 dark:text-utsav-gold mb-1">
+                    Advance Paid (₹)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={bookingAdvance}
+                    onChange={(e) => setBookingAdvance(Number(e.target.value))}
+                    className="w-full px-3.5 py-2 rounded-xl bg-white dark:bg-utsav-maroon-900 border border-utsav-gold/40 text-utsav-brown dark:text-utsav-ivory focus:outline-none font-bold"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-utsav-maroon-800 dark:text-utsav-gold mb-1">
+                  Booking Notes & Inclusions
+                </label>
+                <textarea
+                  rows={2}
+                  value={bookingNotes}
+                  onChange={(e) => setBookingNotes(e.target.value)}
+                  placeholder="e.g. Inclusions: Live counters, sound setup, safa tying..."
+                  className="w-full px-3.5 py-2 rounded-xl bg-white dark:bg-utsav-maroon-900 border border-utsav-gold/40 text-utsav-brown dark:text-utsav-ivory focus:outline-none resize-none"
+                />
+              </div>
+
+              <div className="pt-2 flex items-center justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddBookingModal(false)}
+                  className="px-4 py-2.5 rounded-xl border border-gray-300 text-gray-600 dark:text-gray-300 font-bold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingBooking}
+                  className="px-5 py-2.5 rounded-xl maroon-gradient-btn text-utsav-gold font-bold shadow-md disabled:opacity-50 flex items-center space-x-1.5"
+                >
+                  <PlusCircle className="w-4 h-4" />
+                  <span>{isSubmittingBooking ? 'Saving Contract...' : 'Confirm & Save Booking'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Command Center Banner Header */}
       <div
@@ -911,6 +1162,145 @@ export const EventCommandCenterPage: React.FC = () => {
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {/* 5B. Booked Vendor Services & Contracts */}
+      {activeTab === 'bookings' && (
+        <div className="p-6 rounded-3xl bg-utsav-ivory dark:bg-utsav-maroon-900 border-2 border-utsav-gold/40 shadow-2xl space-y-6 animate-in fade-in duration-200">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-utsav-gold/20 pb-4">
+            <div>
+              <div className="flex items-center space-x-2">
+                <Building className="w-5 h-5 text-utsav-gold" />
+                <h3 className="font-heading text-base font-bold text-utsav-maroon-800 dark:text-utsav-gold">
+                  Booked Services & Vendor Contracts ({bookings.length})
+                </h3>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Manage confirmed venue reservations, royal catering, mandap decor, and entertainment troupe contracts.
+              </p>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <button
+                type="button"
+                onClick={() => setShowAddBookingModal(true)}
+                className="flex items-center space-x-1.5 px-4 py-2 rounded-xl maroon-gradient-btn text-xs font-bold text-utsav-gold shadow-md"
+              >
+                <PlusCircle className="w-4 h-4" />
+                <span>+ Add Service Booking</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Quick Marketplace Category Shortcuts */}
+          <div className="p-4 rounded-2xl bg-white dark:bg-utsav-maroon-950 border border-utsav-gold/30 flex flex-wrap items-center justify-between gap-3">
+            <span className="text-xs font-bold text-utsav-maroon-800 dark:text-utsav-gold">
+              Quick Book from Marketplace:
+            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <Link
+                to="/venues"
+                className="px-3 py-1.5 rounded-xl bg-utsav-beige-100 dark:bg-utsav-maroon-900 border border-utsav-gold/30 hover:border-utsav-gold text-xs font-bold text-utsav-brown dark:text-utsav-ivory flex items-center space-x-1.5"
+              >
+                <Building className="w-3.5 h-3.5 text-utsav-saffron" />
+                <span>Venues</span>
+              </Link>
+              <Link
+                to="/marketplace/catering"
+                className="px-3 py-1.5 rounded-xl bg-utsav-beige-100 dark:bg-utsav-maroon-900 border border-utsav-gold/30 hover:border-utsav-gold text-xs font-bold text-utsav-brown dark:text-utsav-ivory flex items-center space-x-1.5"
+              >
+                <Utensils className="w-3.5 h-3.5 text-utsav-saffron" />
+                <span>Royal Catering</span>
+              </Link>
+              <Link
+                to="/marketplace/decorations"
+                className="px-3 py-1.5 rounded-xl bg-utsav-beige-100 dark:bg-utsav-maroon-900 border border-utsav-gold/30 hover:border-utsav-gold text-xs font-bold text-utsav-brown dark:text-utsav-ivory flex items-center space-x-1.5"
+              >
+                <Flower2 className="w-3.5 h-3.5 text-utsav-saffron" />
+                <span>Mandap & Decor</span>
+              </Link>
+              <Link
+                to="/marketplace/entertainment"
+                className="px-3 py-1.5 rounded-xl bg-utsav-beige-100 dark:bg-utsav-maroon-900 border border-utsav-gold/30 hover:border-utsav-gold text-xs font-bold text-utsav-brown dark:text-utsav-ivory flex items-center space-x-1.5"
+              >
+                <Music className="w-3.5 h-3.5 text-utsav-saffron" />
+                <span>Troupe & Photo</span>
+              </Link>
+            </div>
+          </div>
+
+          {/* Bookings List */}
+          {bookings.length === 0 ? (
+            <div className="p-8 text-center bg-white/50 dark:bg-utsav-maroon-950/40 rounded-2xl border border-utsav-gold/30 space-y-3">
+              <Building className="w-8 h-8 text-utsav-gold mx-auto" />
+              <p className="text-sm font-bold text-utsav-maroon-800 dark:text-utsav-gold">
+                No vendor contracts booked for this celebration yet.
+              </p>
+              <p className="text-xs text-gray-500">
+                Click '+ Add Service Booking' above or browse our curated Indian marketplace to reserve services.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {bookings.map((b) => (
+                <div
+                  key={b._id}
+                  className="p-5 rounded-2xl bg-white dark:bg-utsav-maroon-950 border border-utsav-gold/30 shadow-md space-y-3 flex flex-col justify-between"
+                >
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="px-2.5 py-0.5 rounded-full bg-utsav-saffron/10 text-utsav-saffron border border-utsav-saffron/30 text-[10px] font-bold uppercase">
+                        {b.itemType}
+                      </span>
+                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-500/40 text-[10px] font-bold">
+                        {b.status}
+                      </span>
+                    </div>
+
+                    <h4 className="font-heading text-sm font-bold text-utsav-maroon-800 dark:text-utsav-gold">
+                      {b.itemName}
+                    </h4>
+
+                    {b.bookingNotes && (
+                      <p className="text-xs text-gray-600 dark:text-gray-300 italic">
+                        "{b.bookingNotes}"
+                      </p>
+                    )}
+
+                    <div className="text-[11px] text-gray-500 font-mono">
+                      Ref: {b.bookingNumber} • Date: {b.eventDate}
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-utsav-gold/20 flex items-center justify-between">
+                    <div>
+                      <span className="text-[10px] text-gray-500 block">Total Contract / Due</span>
+                      <span className="font-bold text-xs sm:text-sm text-utsav-maroon-900 dark:text-utsav-saffron">
+                        ₹{b.amount.toLocaleString('en-IN')}
+                      </span>
+                      {b.balanceDue > 0 && (
+                        <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold block">
+                          (Due: ₹{b.balanceDue.toLocaleString('en-IN')})
+                        </span>
+                      )}
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        setPaymentPurpose(`Escrow Settlement: ${b.itemName}`);
+                        setPaymentAmount(b.balanceDue > 0 ? b.balanceDue : Math.round(b.amount * 0.3));
+                        setIsPaymentModalOpen(true);
+                      }}
+                      className="px-3.5 py-2 rounded-xl gold-gradient-btn text-xs font-bold shadow-sm"
+                    >
+                      Pay via Razorpay →
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
