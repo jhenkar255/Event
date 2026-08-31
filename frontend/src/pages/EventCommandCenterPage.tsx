@@ -1581,7 +1581,13 @@ export const EventCommandCenterPage: React.FC = () => {
       )}
 
       {/* 9. Live Broadcast Room */}
-      {activeTab === 'live' && <LiveStreamPlayer eventId={currentEvent._id} isOrganizer={true} />}
+      {activeTab === 'live' && (
+        <LiveStreamPlayer
+          eventId={currentEvent._id}
+          isOrganizer={true}
+          eventDetails={currentEvent}
+        />
+      )}
 
       {/* 10. Digital E-Card */}
       {activeTab === 'invite' && (

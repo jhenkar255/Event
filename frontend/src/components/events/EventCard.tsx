@@ -123,20 +123,39 @@ export const EventCard: React.FC<EventCardProps> = ({ event }) => {
         </div>
 
         {/* Quick Action Buttons */}
-        <div className="pt-2 border-t border-utsav-gold/20 flex items-center justify-between gap-2">
+        <div className="pt-2 border-t border-utsav-gold/20 flex items-center justify-between gap-1.5">
+          <a
+            href={(() => {
+              const type = ((event as any).type || (event as any).eventType || '').toLowerCase();
+              const name = (event.name || '').toLowerCase();
+              if (type.includes('tech') || name.includes('tech') || name.includes('hackathon')) return 'https://www.youtube.com/watch?v=M7lc1UVf-VE';
+              if (type.includes('startup') || type.includes('product')) return 'https://www.youtube.com/watch?v=M7lc1UVf-VE';
+              if (type.includes('fest') || type.includes('college')) return 'https://www.youtube.com/watch?v=fJ9rUzIMcZQ';
+              if (type.includes('festival') || name.includes('garba')) return 'https://www.youtube.com/watch?v=9bZkp7q19f0';
+              if (type.includes('wedding')) return 'https://www.youtube.com/watch?v=09R8_2nJtjg';
+              return 'https://www.youtube.com/watch?v=09R8_2nJtjg';
+            })()}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-red-600/10 hover:bg-red-600 text-red-600 hover:text-white border border-red-500/30 text-xs font-bold transition-all"
+            title="Watch Event Stream / Highlights on YouTube"
+          >
+            <span>▶ YouTube</span>
+          </a>
+
           <Link
             to={`/events/${event._id}/qr`}
-            className="flex items-center space-x-1 px-3 py-1.5 rounded-xl bg-utsav-gold/15 hover:bg-utsav-gold text-utsav-maroon-950 dark:text-utsav-gold dark:hover:text-utsav-maroon-950 border border-utsav-gold/40 text-xs font-bold transition-all shadow-xs"
+            className="flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-utsav-gold/15 hover:bg-utsav-gold text-utsav-maroon-950 dark:text-utsav-gold dark:hover:text-utsav-maroon-950 border border-utsav-gold/40 text-xs font-bold transition-all shadow-xs"
             title="View personal digital entry pass"
           >
-            <span>🎟️ My QR Pass</span>
+            <span>🎟️ QR Pass</span>
           </Link>
 
           <Link
             to={`/events/${event._id}`}
-            className="px-3.5 py-1.5 rounded-xl maroon-gradient-btn text-xs font-bold text-utsav-gold shadow-sm flex items-center space-x-1"
+            className="px-3 py-1.5 rounded-xl maroon-gradient-btn text-xs font-bold text-utsav-gold shadow-sm flex items-center space-x-1"
           >
-            <span>Command Hub</span>
+            <span>Hub</span>
             <ArrowRight className="w-3 h-3" />
           </Link>
         </div>
