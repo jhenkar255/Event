@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { DiyaIcon, MandalaCorner } from '../../components/layout/IndianMotifs';
 import { GoogleAuthModal } from '../../components/auth/GoogleAuthModal';
+import { triggerGoogleOAuthPopup } from '../../utils/googleAuth';
 import {
   Mail,
   Lock,
@@ -18,7 +19,7 @@ import {
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, isLoading } = useAuth();
+  const { login, googleLogin, isLoading } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -43,6 +44,33 @@ export const LoginPage: React.FC = () => {
         navigate('/dashboard', { replace: true });
       }
     }, 500);
+  };
+
+  const handleGoogleClick = async () => {
+    setError(null);
+    try {
+      await triggerGoogleOAuthPopup({
+        onSuccess: async (profile) => {
+          try {
+            const authUser = await googleLogin({
+              email: profile.email,
+              name: profile.name,
+              picture: profile.picture,
+              role: 'USER',
+            });
+            handleAuthSuccess(authUser);
+          } catch (loginErr: any) {
+            setError(loginErr.message || 'Google authentication failed');
+          }
+        },
+        onError: (err) => {
+          console.warn('Google popup trigger:', err);
+          setIsGoogleModalOpen(true);
+        },
+      });
+    } catch {
+      setIsGoogleModalOpen(true);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -119,7 +147,7 @@ export const LoginPage: React.FC = () => {
         {/* Google One-Click Sign In */}
         <button
           type="button"
-          onClick={() => setIsGoogleModalOpen(true)}
+          onClick={handleGoogleClick}
           className="w-full py-3 rounded-xl bg-white dark:bg-utsav-maroon-900 border border-gray-300 dark:border-utsav-gold/40 hover:border-utsav-gold text-xs sm:text-sm font-bold text-gray-700 dark:text-utsav-ivory flex items-center justify-center space-x-3 shadow-md hover:bg-gray-50 dark:hover:bg-utsav-maroon-800 transition-all cursor-pointer group"
         >
           <svg className="w-5 h-5 group-hover:scale-110 transition-transform" viewBox="0 0 24 24">

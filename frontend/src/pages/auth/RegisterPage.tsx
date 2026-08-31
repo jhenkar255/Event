@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { DiyaIcon, MandalaCorner } from '../../components/layout/IndianMotifs';
 import { GoogleAuthModal } from '../../components/auth/GoogleAuthModal';
+import { triggerGoogleOAuthPopup } from '../../utils/googleAuth';
 import {
   User,
   Mail,
@@ -25,7 +26,7 @@ import {
 export const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { register, isLoading } = useAuth();
+  const { register, googleLogin, isLoading } = useAuth();
 
   const initialRole = searchParams.get('role')?.toUpperCase() === 'ORGANIZER' ? 'ORGANIZER' : 'USER';
   const [role, setRole] = useState<'USER' | 'ORGANIZER'>(initialRole);
@@ -85,6 +86,33 @@ export const RegisterPage: React.FC = () => {
     }, 500);
   };
 
+  const handleGoogleClick = async () => {
+    setError(null);
+    try {
+      await triggerGoogleOAuthPopup({
+        onSuccess: async (profile) => {
+          try {
+            const newUser = await googleLogin({
+              email: profile.email,
+              name: profile.name,
+              picture: profile.picture,
+              role,
+            });
+            handleGoogleSuccess(newUser);
+          } catch (regErr: any) {
+            setError(regErr.message || 'Google registration failed');
+          }
+        },
+        onError: (err) => {
+          console.warn('Google popup trigger:', err);
+          setIsGoogleModalOpen(true);
+        },
+      });
+    } catch {
+      setIsGoogleModalOpen(true);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -128,19 +156,12 @@ export const RegisterPage: React.FC = () => {
         city,
         state,
         organizationName: role === 'ORGANIZER' ? organizationName : undefined,
+        organizationDescription: role === 'ORGANIZER' ? `${businessCategory} specialist` : undefined,
         businessCategory: role === 'ORGANIZER' ? businessCategory : undefined,
         experience: role === 'ORGANIZER' ? experience : undefined,
       });
 
-      setSuccessMessage(`Account created successfully! Welcome, ${newUser.name}.`);
-
-      setTimeout(() => {
-        if (role === 'ORGANIZER') {
-          navigate('/organizer/dashboard', { replace: true });
-        } else {
-          navigate('/dashboard', { replace: true });
-        }
-      }, 500);
+      handleGoogleSuccess(newUser);
     } catch (err: any) {
       setError(err.message || 'Registration failed. Please try again.');
     }
@@ -183,25 +204,25 @@ export const RegisterPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setRole('USER')}
-              className={`py-3 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-2 cursor-pointer ${
+              className={`py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-2 cursor-pointer ${
                 role === 'USER'
-                  ? 'bg-utsav-maroon-800 text-utsav-gold shadow-md border border-utsav-gold'
-                  : 'text-utsav-brown dark:text-utsav-ivory hover:bg-white/60 dark:hover:bg-utsav-maroon-950'
+                  ? 'bg-utsav-maroon-800 text-utsav-gold shadow-md'
+                  : 'text-utsav-brown dark:text-utsav-ivory hover:bg-utsav-gold/20'
               }`}
             >
-              <Users className="w-4 h-4 text-utsav-gold" />
-              <span>Client / Host</span>
+              <User className="w-4 h-4" />
+              <span>Celebration Host</span>
             </button>
             <button
               type="button"
               onClick={() => setRole('ORGANIZER')}
-              className={`py-3 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-2 cursor-pointer ${
+              className={`py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-2 cursor-pointer ${
                 role === 'ORGANIZER'
-                  ? 'bg-utsav-maroon-800 text-utsav-gold shadow-md border border-utsav-gold'
-                  : 'text-utsav-brown dark:text-utsav-ivory hover:bg-white/60 dark:hover:bg-utsav-maroon-950'
+                  ? 'bg-utsav-maroon-800 text-utsav-gold shadow-md'
+                  : 'text-utsav-brown dark:text-utsav-ivory hover:bg-utsav-gold/20'
               }`}
             >
-              <Briefcase className="w-4 h-4 text-utsav-saffron" />
+              <Briefcase className="w-4 h-4" />
               <span>Event Organizer</span>
             </button>
           </div>
@@ -217,7 +238,7 @@ export const RegisterPage: React.FC = () => {
 
         {/* Success Toast */}
         {successMessage && (
-          <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 text-xs font-medium border border-emerald-200 dark:border-emerald-800 flex items-center space-x-2 animate-in fade-in duration-150">
+          <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:emerald-300 text-xs font-medium border border-emerald-200 dark:border-emerald-800 flex items-center space-x-2 animate-in fade-in duration-150">
             <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
             <span>{successMessage}</span>
           </div>
@@ -226,7 +247,7 @@ export const RegisterPage: React.FC = () => {
         {/* Google One-Click Registration */}
         <button
           type="button"
-          onClick={() => setIsGoogleModalOpen(true)}
+          onClick={handleGoogleClick}
           className="w-full py-3 rounded-xl bg-white dark:bg-utsav-maroon-900 border border-gray-300 dark:border-utsav-gold/40 hover:border-utsav-gold text-xs sm:text-sm font-bold text-gray-700 dark:text-utsav-ivory flex items-center justify-center space-x-3 shadow-md hover:bg-gray-50 dark:hover:bg-utsav-maroon-800 transition-all cursor-pointer group"
         >
           <svg className="w-5 h-5 group-hover:scale-110 transition-transform" viewBox="0 0 24 24">
