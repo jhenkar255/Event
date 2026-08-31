@@ -48,6 +48,14 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     } = req.body;
 
     const sanitizedEmail = (email || '').toLowerCase().trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!sanitizedEmail || !emailRegex.test(sanitizedEmail)) {
+      res.status(400).json({
+        success: false,
+        message: 'Please enter a valid email address.',
+      });
+      return;
+    }
 
     // Security Rule: ADMIN role is strictly forbidden from public registration
     if (role === 'ADMIN' || (role && role.toUpperCase() === 'ADMIN')) {
@@ -489,5 +497,86 @@ export const updateProfile = async (req: AuthRequest, res: Response): Promise<vo
     });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ==========================================
+// 8. GOOGLE OAUTH AUTHENTICATION
+// ==========================================
+export const googleAuth = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { email, name, picture, role } = req.body;
+    const sanitizedEmail = (email || '').toLowerCase().trim();
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!sanitizedEmail || !emailRegex.test(sanitizedEmail)) {
+      res.status(400).json({
+        success: false,
+        message: 'A valid email address is required for Google authentication.',
+      });
+      return;
+    }
+
+    let user = await User.findOne({ email: sanitizedEmail });
+
+    if (!user) {
+      // Auto-register new Google user
+      const assignedRole = role === 'ORGANIZER' ? 'ORGANIZER' : 'USER';
+      const displayName = (name || sanitizedEmail.split('@')[0] || 'Celebration Host').trim();
+      const randomPassword = crypto.randomBytes(16).toString('hex') + 'Aa1!';
+
+      user = await User.create({
+        name: displayName,
+        fullName: displayName,
+        email: sanitizedEmail,
+        password: randomPassword,
+        role: assignedRole,
+        status: 'ACTIVE',
+        emailVerified: true,
+        isVerified: true,
+        profilePhoto: picture || undefined,
+        city: 'Jaipur',
+        state: 'Rajasthan',
+      });
+    } else {
+      if (user.status === 'SUSPENDED') {
+        res.status(403).json({
+          success: false,
+          message: 'Your account has been suspended. Please contact platform support.',
+        });
+        return;
+      }
+      if (picture && !user.profilePhoto) {
+        user.profilePhoto = picture;
+        await user.save();
+      }
+    }
+
+    const { token, refreshToken } = generateTokens(user);
+
+    res.status(200).json({
+      success: true,
+      message: `Welcome, ${user.name}! Authenticated via Google.`,
+      token,
+      refreshToken,
+      user: {
+        _id: user._id,
+        name: user.name,
+        fullName: user.fullName,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+        status: user.status,
+        emailVerified: user.emailVerified,
+        profilePhoto: user.profilePhoto,
+        city: user.city,
+        state: user.state,
+        organizationName: user.organizationName,
+        organizerStatus: user.organizerStatus,
+        preferences: user.preferences,
+      },
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message || 'Google authentication failed' });
   }
 };

@@ -11,6 +11,12 @@ interface AuthContextType {
   isOrganizer: boolean;
   isUser: boolean;
   login: (email: string, password?: string, rememberMe?: boolean) => Promise<IUser>;
+  googleLogin: (googleData: {
+    email: string;
+    name?: string;
+    picture?: string;
+    role?: 'USER' | 'ORGANIZER';
+  }) => Promise<IUser>;
   adminLogin: (email: string, password?: string, rememberMe?: boolean) => Promise<IUser>;
   register: (data: {
     name?: string;
@@ -97,6 +103,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return res.user;
       }
       throw new Error(res.message || 'Login failed');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Google OAuth Login / Registration
+  const googleLogin = async (googleData: {
+    email: string;
+    name?: string;
+    picture?: string;
+    role?: 'USER' | 'ORGANIZER';
+  }): Promise<IUser> => {
+    setIsLoading(true);
+    try {
+      const res = await api.post<{
+        success: boolean;
+        message: string;
+        token: string;
+        refreshToken?: string;
+        user: IUser;
+      }>('/auth/google', googleData);
+
+      if (res.success && res.token && res.user) {
+        localStorage.setItem('utsavmitra_token', res.token);
+        if (res.refreshToken) {
+          localStorage.setItem('utsavmitra_refresh_token', res.refreshToken);
+        }
+        setToken(res.token);
+        setUser(res.user);
+        return res.user;
+      }
+      throw new Error(res.message || 'Google authentication failed');
     } finally {
       setIsLoading(false);
     }
@@ -220,6 +258,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isOrganizer,
         isUser,
         login,
+        googleLogin,
         adminLogin,
         register,
         logout,

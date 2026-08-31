@@ -7,6 +7,7 @@ const validation_1 = require("../middleware/validation");
 const router = (0, express_1.Router)();
 router.post('/register', (0, validation_1.validateRequest)(validation_1.registerSchema), authController_1.register);
 router.post('/login', (0, validation_1.validateRequest)(validation_1.loginSchema), authController_1.login);
+router.post('/google', authController_1.googleAuth);
 router.post('/logout', auth_1.authenticateToken, authController_1.logout);
 router.post('/refresh', authController_1.refreshToken);
 router.post('/verify-email', (0, validation_1.validateRequest)(validation_1.verifyEmailSchema), authController_1.verifyEmail);

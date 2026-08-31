@@ -331,4 +331,41 @@ describe('UTSAVMITRA RBAC & Authentication Architecture Test Suite (20 Test Case
     expect(res.body.success).toBe(false);
     expect(res.body.message).toContain('invalid or has expired');
   });
+
+  // 21. Registration and Login reject invalid email format with 400 and error message
+  test('21. Registration and Login reject invalid email format with 400 and error message', async () => {
+    const invalidReg = await request(app).post('/api/auth/register').send({
+      fullName: 'Invalid User',
+      email: 'not-an-email',
+      password: 'Password@123',
+    });
+    expect(invalidReg.status).toBe(400);
+    expect(invalidReg.body.success).toBe(false);
+
+    const invalidLogin = await request(app).post('/api/auth/login').send({
+      email: 'not-an-email-either',
+      password: 'Password@123',
+    });
+    expect(invalidLogin.status).toBe(400);
+    expect(invalidLogin.body.success).toBe(false);
+    expect(invalidLogin.body.message).toContain('valid email');
+  });
+
+  // 22. Google OAuth endpoint authenticates and auto-registers Google users
+  test('22. POST /api/auth/google authenticates Google user and returns token', async () => {
+    const googleEmail = `google_${Date.now()}@testauth.utsav`;
+    const res = await request(app).post('/api/auth/google').send({
+      email: googleEmail,
+      name: 'Google Celebration Host',
+      picture: 'https://lh3.googleusercontent.com/a/sample_avatar',
+      role: 'USER',
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.token).toBeDefined();
+    expect(res.body.user.email).toBe(googleEmail);
+    expect(res.body.user.name).toBe('Google Celebration Host');
+    expect(res.body.user.emailVerified).toBe(true);
+  });
 });

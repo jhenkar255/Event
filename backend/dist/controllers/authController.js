@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateProfile = exports.getCurrentUser = exports.verifyEmail = exports.resetPassword = exports.forgotPassword = exports.refreshToken = exports.logout = exports.login = exports.register = void 0;
+exports.googleAuth = exports.updateProfile = exports.getCurrentUser = exports.verifyEmail = exports.resetPassword = exports.forgotPassword = exports.refreshToken = exports.logout = exports.login = exports.register = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const crypto_1 = __importDefault(require("crypto"));
 const User_1 = require("../models/User");
@@ -23,6 +23,14 @@ const register = async (req, res) => {
     try {
         const { name, fullName, email, password, phone, role, city, state, organizationName, organizationDescription, businessCategory, experience, services, } = req.body;
         const sanitizedEmail = (email || '').toLowerCase().trim();
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!sanitizedEmail || !emailRegex.test(sanitizedEmail)) {
+            res.status(400).json({
+                success: false,
+                message: 'Please enter a valid email address.',
+            });
+            return;
+        }
         // Security Rule: ADMIN role is strictly forbidden from public registration
         if (role === 'ADMIN' || (role && role.toUpperCase() === 'ADMIN')) {
             res.status(403).json({
@@ -422,3 +430,80 @@ const updateProfile = async (req, res) => {
     }
 };
 exports.updateProfile = updateProfile;
+// ==========================================
+// 8. GOOGLE OAUTH AUTHENTICATION
+// ==========================================
+const googleAuth = async (req, res) => {
+    try {
+        const { email, name, picture, role } = req.body;
+        const sanitizedEmail = (email || '').toLowerCase().trim();
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!sanitizedEmail || !emailRegex.test(sanitizedEmail)) {
+            res.status(400).json({
+                success: false,
+                message: 'A valid email address is required for Google authentication.',
+            });
+            return;
+        }
+        let user = await User_1.User.findOne({ email: sanitizedEmail });
+        if (!user) {
+            // Auto-register new Google user
+            const assignedRole = role === 'ORGANIZER' ? 'ORGANIZER' : 'USER';
+            const displayName = (name || sanitizedEmail.split('@')[0] || 'Celebration Host').trim();
+            const randomPassword = crypto_1.default.randomBytes(16).toString('hex') + 'Aa1!';
+            user = await User_1.User.create({
+                name: displayName,
+                fullName: displayName,
+                email: sanitizedEmail,
+                password: randomPassword,
+                role: assignedRole,
+                status: 'ACTIVE',
+                emailVerified: true,
+                isVerified: true,
+                profilePhoto: picture || undefined,
+                city: 'Jaipur',
+                state: 'Rajasthan',
+            });
+        }
+        else {
+            if (user.status === 'SUSPENDED') {
+                res.status(403).json({
+                    success: false,
+                    message: 'Your account has been suspended. Please contact platform support.',
+                });
+                return;
+            }
+            if (picture && !user.profilePhoto) {
+                user.profilePhoto = picture;
+                await user.save();
+            }
+        }
+        const { token, refreshToken } = generateTokens(user);
+        res.status(200).json({
+            success: true,
+            message: `Welcome, ${user.name}! Authenticated via Google.`,
+            token,
+            refreshToken,
+            user: {
+                _id: user._id,
+                name: user.name,
+                fullName: user.fullName,
+                email: user.email,
+                phone: user.phone,
+                role: user.role,
+                status: user.status,
+                emailVerified: user.emailVerified,
+                profilePhoto: user.profilePhoto,
+                city: user.city,
+                state: user.state,
+                organizationName: user.organizationName,
+                organizerStatus: user.organizerStatus,
+                preferences: user.preferences,
+            },
+        });
+    }
+    catch (error) {
+        res.status(500).json({ success: false, message: error.message || 'Google authentication failed' });
+    }
+};
+exports.googleAuth = googleAuth;
