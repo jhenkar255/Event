@@ -18,10 +18,22 @@ export const EventsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState(initialSearch);
   const [selectedTradition, setSelectedTradition] = useState('All');
+  const [selectedType, setSelectedType] = useState('All');
   const [selectedStatus, setSelectedStatus] = useState('All');
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
 
   const isAdmin = user?.role === 'ADMIN';
+
+  const CATEGORY_CHIPS = [
+    { label: 'All Events', type: 'All', icon: '🌟' },
+    { label: 'Tech & Hackathons', type: 'Tech Meet & Hackathon', icon: '💻' },
+    { label: 'Startup Conclaves', type: 'Startup Conclave', icon: '🚀' },
+    { label: 'Product Launches', type: 'Product Launch', icon: '⚡' },
+    { label: 'Royal Weddings', type: 'Wedding', icon: '💍' },
+    { label: 'Cultural & Youth Fests', type: 'Cultural Fest', icon: '🎭' },
+    { label: 'Festivals & Garba', type: 'Festival', icon: '🎆' },
+    { label: 'Corporate Galas', type: 'Corporate Event', icon: '🏢' },
+  ];
 
   useEffect(() => {
     if (initialSearch) {
@@ -44,7 +56,8 @@ export const EventsPage: React.FC = () => {
   const filteredEvents = events.filter((ev) => {
     const q = (search || '').toLowerCase().trim();
     const eventName = (ev.name || '').toLowerCase();
-    const eventType = ((ev as any).type || (ev as any).eventType || '').toLowerCase();
+    const rawType = (ev as any).type || (ev as any).eventType || '';
+    const eventType = rawType.toLowerCase();
     const tradition = (ev.culturalTradition || '').toLowerCase();
     const city = (ev.location?.city || '').toLowerCase();
     const address = (ev.location?.address || '').toLowerCase();
@@ -60,14 +73,24 @@ export const EventsPage: React.FC = () => {
     const matchesTradition =
       selectedTradition === 'All' || ev.culturalTradition === selectedTradition;
 
+    const matchesType =
+      selectedType === 'All' ||
+      rawType === selectedType ||
+      (selectedType === 'Wedding' && rawType.toLowerCase().includes('wedding')) ||
+      (selectedType === 'Tech Meet & Hackathon' && (rawType.toLowerCase().includes('tech') || rawType.toLowerCase().includes('hackathon'))) ||
+      (selectedType === 'Startup Conclave' && rawType.toLowerCase().includes('startup')) ||
+      (selectedType === 'Product Launch' && rawType.toLowerCase().includes('product')) ||
+      (selectedType === 'Cultural Fest' && (rawType.toLowerCase().includes('fest') || rawType.toLowerCase().includes('college'))) ||
+      (selectedType === 'Festival' && (rawType.toLowerCase().includes('festival') || rawType.toLowerCase().includes('garba') || rawType.toLowerCase().includes('diwali')));
+
     const matchesStatus =
       selectedStatus === 'All' || ev.status === selectedStatus;
 
-    return matchesSearch && matchesTradition && matchesStatus;
+    return matchesSearch && matchesTradition && matchesType && matchesStatus;
   });
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-in fade-in duration-200">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 animate-in fade-in duration-200">
       <AIEventWizardModal isOpen={isAiModalOpen} onClose={() => setIsAiModalOpen(false)} />
 
       {/* Top Back Navigation Bar */}
@@ -95,10 +118,10 @@ export const EventsPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-utsav-gold/30 pb-4">
         <div>
           <h1 className="font-heading text-2xl sm:text-3xl font-bold text-utsav-maroon-800 dark:text-utsav-gold">
-            Auspicious Celebrations Hub
+            Auspicious Celebrations & Conclave Hub
           </h1>
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            Browse, manage, and monitor all your ongoing, upcoming, and past cultural events.
+            Discover and manage TechMeets, Hackathons, Royal Weddings, Festivals, and Corporate Summits.
           </p>
         </div>
 
@@ -124,6 +147,27 @@ export const EventsPage: React.FC = () => {
         )}
       </div>
 
+      {/* Quick Category Filtering Chips */}
+      <div className="flex items-center space-x-2 overflow-x-auto pb-2 scrollbar-thin">
+        {CATEGORY_CHIPS.map((chip) => {
+          const isActive = selectedType === chip.type;
+          return (
+            <button
+              key={chip.type}
+              onClick={() => setSelectedType(chip.type)}
+              className={`px-3.5 py-1.5 rounded-2xl text-xs font-bold whitespace-nowrap transition-all flex items-center space-x-1.5 cursor-pointer ${
+                isActive
+                  ? 'maroon-gradient-btn text-utsav-gold shadow-md border border-utsav-gold'
+                  : 'bg-utsav-ivory dark:bg-utsav-maroon-900 text-gray-700 dark:text-gray-200 border border-utsav-gold/30 hover:border-utsav-gold'
+              }`}
+            >
+              <span>{chip.icon}</span>
+              <span>{chip.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
       {/* Search & Filter Strip */}
       <div className="p-4 rounded-3xl bg-utsav-ivory dark:bg-utsav-maroon-900 border border-utsav-gold/40 shadow-md flex flex-col md:flex-row items-center gap-3">
         <div className="relative flex-1 w-full">
@@ -132,12 +176,25 @@ export const EventsPage: React.FC = () => {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by event title, tradition, city (e.g. Jaipur, Wedding, Sangeet)..."
+            placeholder="Search by event title, type, city (e.g. Bangalore, TechMeet, Hackathon, Wedding)..."
             className="w-full pl-10 pr-3.5 py-2 rounded-xl bg-white dark:bg-utsav-maroon-950 border border-utsav-gold/40 text-xs sm:text-sm text-utsav-brown dark:text-utsav-ivory placeholder-gray-400 focus:outline-none focus:border-utsav-gold"
           />
         </div>
 
-        <div className="flex items-center space-x-2 w-full md:w-auto">
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+          <select
+            value={selectedType}
+            onChange={(e) => setSelectedType(e.target.value)}
+            className="flex-1 md:flex-initial px-3 py-2 rounded-xl bg-white dark:bg-utsav-maroon-950 border border-utsav-gold/40 text-xs text-utsav-brown dark:text-utsav-ivory focus:outline-none"
+          >
+            <option value="All">All Categories</option>
+            {INDIAN_EVENT_TYPES.map((et) => (
+              <option key={et.type} value={et.type}>
+                {et.name}
+              </option>
+            ))}
+          </select>
+
           <select
             value={selectedTradition}
             onChange={(e) => setSelectedTradition(e.target.value)}
