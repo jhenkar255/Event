@@ -107,7 +107,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenAiWizard }) => {
     { label: 'Events', path: '/events', icon: Calendar },
     { label: 'Venues', path: '/venues', icon: MapPin },
     { label: 'AI Planner', path: '/ai-planner', icon: Sparkles, badge: 'Smart' },
-    { label: 'Live Events', path: '/events', icon: Radio },
+    { label: 'Live Events', path: '/live', icon: Radio, badge: 'Live' },
   ];
 
   const serviceLinks = [

@@ -45,6 +45,7 @@ import { NotificationsPage } from './pages/NotificationsPage';
 import { UserQRTicketPage } from './pages/events/UserQRTicketPage';
 import { OrganizerGateScannerPage } from './pages/organizer/OrganizerGateScannerPage';
 import { AdminEventAttendancePage } from './pages/admin/AdminEventAttendancePage';
+import { LiveEventsPage } from './pages/LiveEventsPage';
 
 const AppLayout: React.FC = () => {
   const location = useLocation();
@@ -177,6 +178,8 @@ const AppLayout: React.FC = () => {
           <Route path="/entertainment" element={<EntertainmentPage />} />
           <Route path="/invite/:token" element={<PublicInvitationPage />} />
           <Route path="/ai-planner" element={<AIPlannerPage />} />
+          <Route path="/live" element={<LiveEventsPage />} />
+          <Route path="/live-events" element={<LiveEventsPage />} />
           <Route path="/notifications" element={<NotificationsPage />} />
         </Routes>
       </main>

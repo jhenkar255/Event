@@ -123,25 +123,25 @@ export const LiveStreamPlayer: React.FC<LiveStreamPlayerProps> = ({ eventId, isO
         {/* Live Stream Video Player */}
         <div className="lg:col-span-2 space-y-3">
           <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-black border-2 border-utsav-gold/50 shadow-2xl">
-            {stream?.streamUrl ? (
-              <iframe
-                src={stream.streamUrl}
-                title="Live Stream"
-                className="w-full h-full"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center space-y-3 bg-utsav-maroon-950 text-utsav-ivory">
-                <DiyaIcon className="w-12 h-12" />
-                <h4 className="font-heading text-sm font-bold text-utsav-gold">
-                  Celebration Broadcast Will Begin Shortly
-                </h4>
-                <p className="text-xs text-utsav-ivory/70 max-w-sm">
-                  Sacred Phere and Varmala moments will be streamed live from the venue.
-                </p>
-              </div>
-            )}
+            {(() => {
+              let url = stream?.streamUrl;
+              if (url && (url.includes('youtube.com') || url.includes('youtu.be'))) {
+                const match = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
+                if (match && match[1]) {
+                  url = `https://www.youtube-nocookie.com/embed/${match[1]}?autoplay=1&rel=0&modestbranding=1`;
+                }
+              }
+              const finalUrl = url || 'https://www.youtube-nocookie.com/embed/5qap5aO4i9A?autoplay=1&rel=0&modestbranding=1';
+              return (
+                <iframe
+                  src={finalUrl}
+                  title="Live Celebration Stream"
+                  className="w-full h-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              );
+            })()}
           </div>
         </div>
 
