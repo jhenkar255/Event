@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
@@ -50,6 +50,11 @@ import { LiveEventsPage } from './pages/LiveEventsPage';
 const AppLayout: React.FC = () => {
   const location = useLocation();
   const [isAiWizardOpen, setIsAiWizardOpen] = useState(false);
+
+  // Automatically scroll to top and reset viewport on route change
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
 
   // Hide Navbar and Footer on standalone public invitation e-card or specialized auth screens if needed
   const isPublicInvite = location.pathname.startsWith('/invite/');

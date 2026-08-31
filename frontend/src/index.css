@@ -12,15 +12,32 @@
     --color-brown: 43 33 24;
   }
 
-  html, body {
+  html {
     overflow-x: hidden;
-    max-width: 100vw;
+    width: 100%;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 
   body {
+    overflow-x: hidden;
+    width: 100%;
+    min-height: 100%;
+    margin: 0;
+    padding: 0;
+    touch-action: manipulation;
     background-color: #FFF8EC;
     color: #2B2118;
     font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+
+  /* Prevent mobile / tablet auto-zooming on form fields */
+  @media screen and (max-width: 768px) {
+    input,
+    select,
+    textarea {
+      font-size: 16px !important;
+    }
   }
 
   .dark body {
