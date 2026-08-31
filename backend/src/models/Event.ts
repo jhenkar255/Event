@@ -131,6 +131,39 @@ const EventSchema = new Schema<IEventDocument>(
         speaker: { type: String },
       },
     ],
+    visibility: {
+      type: String,
+      enum: ['PUBLIC', 'PRIVATE', 'INVITATION_ONLY'],
+      default: 'PUBLIC',
+      index: true,
+    },
+    ticketTiers: [
+      {
+        id: { type: String },
+        name: { type: String, default: 'General' },
+        price: { type: Number, default: 0 },
+        capacity: { type: Number, default: 100 },
+        availableSeats: { type: Number, default: 100 },
+        description: { type: String },
+      },
+    ],
+    bookingStartDate: { type: String },
+    bookingEndDate: { type: String },
+    isSoldOut: { type: Boolean, default: false },
+    isRegistrationClosed: { type: Boolean, default: false },
+    cancellationPolicy: {
+      type: String,
+      default: 'Free cancellation up to 48 hours prior to event commencement. 100% refund processed within 3-5 working days.',
+    },
+    refundPolicy: {
+      type: String,
+      default: '100% refund for cancellation 48h prior. 50% refund 24h prior. No refund on event day.',
+    },
+    termsAndConditions: {
+      type: String,
+      default: 'Please present your unique UtsavMitra QR code at entry gate. Admission is subject to security checks.',
+    },
+    distanceKm: { type: Number, default: 2.5 },
     theme: { type: String, default: 'Royal Cultural Heritage' },
     status: {
       type: String,

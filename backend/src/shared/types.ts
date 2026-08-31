@@ -147,6 +147,23 @@ export interface IEvent {
   chiefGuests?: string[];
   sponsors?: { name: string; tier?: string; logo?: string }[];
   schedule?: { time: string; title: string; description?: string; speaker?: string }[];
+  visibility?: 'PUBLIC' | 'PRIVATE' | 'INVITATION_ONLY';
+  ticketTiers?: Array<{
+    id: string;
+    name: string;
+    price: number;
+    capacity: number;
+    availableSeats: number;
+    description?: string;
+  }>;
+  bookingStartDate?: string;
+  bookingEndDate?: string;
+  isSoldOut?: boolean;
+  isRegistrationClosed?: boolean;
+  cancellationPolicy?: string;
+  refundPolicy?: string;
+  termsAndConditions?: string;
+  distanceKm?: number;
   theme?: string;
   status: EventStatus;
   createdBy: any;
@@ -389,16 +406,40 @@ export interface IBooking {
   bookingNumber: string;
   eventId: any;
   userId: any;
-  itemType: 'VENUE' | 'DECORATION' | 'CATERING' | 'ENTERTAINMENT' | 'PACKAGE';
-  itemId: string;
-  itemName: string;
+  bookingType?: 'EVENT_TICKET' | 'VENDOR_SERVICE';
+  ticketTier?: string; // 'General' | 'VIP' | 'Premium' | 'Free'
+  ticketTypeId?: string;
+  quantity?: number;
+  unitPrice?: number;
+  totalAmount?: number;
+  platformFee?: number;
+  taxAmount?: number;
+  discountAmount?: number;
+  itemType?: 'EVENT_TICKET' | 'VENUE' | 'DECORATION' | 'CATERING' | 'ENTERTAINMENT' | 'PACKAGE';
+  itemId?: string;
+  itemName?: string;
   amount: number;
-  advancePaid: number;
-  balanceDue: number;
-  status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
-  eventDate: string;
+  advancePaid?: number;
+  balanceDue?: number;
+  status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' | 'REFUNDED' | 'EXPIRED';
+  bookingStatus?: 'PENDING_PAYMENT' | 'CONFIRMED' | 'CANCELLED' | 'REFUNDED' | 'EXPIRED' | 'COMPLETED';
+  paymentStatus?: 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED';
+  attendeeDetails?: {
+    name: string;
+    email: string;
+    phone?: string;
+  };
+  qrToken?: string;
+  qrCodeId?: any;
+  checkedIn?: boolean;
+  checkedInAt?: string;
+  cancellationPolicy?: string;
+  refundAmount?: number;
+  eventDate?: string;
   bookingNotes?: string;
+  eventDetails?: Partial<IEvent>;
   createdAt?: string;
+  updatedAt?: string;
 }
 
 export type PaymentStatus =

@@ -38,6 +38,7 @@ import {
   Receipt,
   Check,
   Package,
+  Ticket,
 } from 'lucide-react';
 import { AIEventWizardModal } from '../components/ai/AIEventWizardModal';
 import { RiskAlertsBanner } from '../components/events/RiskAlertsBanner';
@@ -718,10 +719,94 @@ export const DashboardPage: React.FC = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {filteredBookings.map((bkg) => {
+                const isTicket = bkg.bookingType === 'EVENT_TICKET' || bkg.itemType === 'EVENT_TICKET';
                 const isVenue = bkg.itemType === 'VENUE';
                 const isDecor = bkg.itemType === 'DECORATION';
                 const isCatering = bkg.itemType === 'CATERING';
                 const isEntertainment = bkg.itemType === 'ENTERTAINMENT';
+                const eventObj = typeof bkg.eventId === 'object' ? bkg.eventId : null;
+
+                if (isTicket) {
+                  return (
+                    <div
+                      key={bkg._id}
+                      className="p-5 rounded-3xl bg-white dark:bg-utsav-maroon-950 border-2 border-utsav-gold/60 shadow-lg space-y-4 hover:border-utsav-gold hover:shadow-2xl transition-all relative overflow-hidden group"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <span className="p-2 rounded-xl text-xs bg-amber-400 text-utsav-maroon-950 font-bold shadow-sm">
+                            <Ticket className="w-4 h-4" />
+                          </span>
+                          <div>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-utsav-saffron block">
+                              EVENT ENTRY TICKET
+                            </span>
+                            <span className="font-mono text-[11px] text-utsav-gold font-bold">
+                              {bkg.bookingNumber}
+                            </span>
+                          </div>
+                        </div>
+
+                        <span className="px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-500/30 shadow-xs">
+                          ✓ {bkg.bookingStatus || bkg.status || 'CONFIRMED'}
+                        </span>
+                      </div>
+
+                      <div>
+                        <h3 className="font-heading text-base font-bold text-utsav-maroon-800 dark:text-utsav-gold group-hover:text-utsav-saffron transition-colors">
+                          {eventObj?.name || bkg.itemName}
+                        </h3>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center space-x-2">
+                          <Calendar className="w-3.5 h-3.5 text-utsav-saffron shrink-0" />
+                          <span>{eventObj?.date || bkg.eventDate}</span>
+                          <span>•</span>
+                          <MapPin className="w-3.5 h-3.5 text-utsav-saffron shrink-0" />
+                          <span className="truncate">{eventObj?.location?.city || 'Bengaluru'}</span>
+                        </p>
+                      </div>
+
+                      {/* Ticket Badge & Verification Grid */}
+                      <div className="p-3 rounded-2xl bg-utsav-beige-100 dark:bg-utsav-maroon-900/60 border border-utsav-gold/30 text-xs space-y-1.5">
+                        <div className="flex justify-between font-bold">
+                          <span className="text-gray-500 dark:text-gray-400">Pass Type:</span>
+                          <span className="text-utsav-maroon-900 dark:text-utsav-gold">
+                            🎟️ {bkg.ticketTier || 'General'} Pass × {bkg.quantity || 1}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-500 dark:text-gray-400">Payment:</span>
+                          <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                            {bkg.amount === 0 ? 'FREE REGISTRATION ✓' : `PAID (₹${bkg.amount}) ✓`}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-500 dark:text-gray-400">Gate Entry Status:</span>
+                          <span className={`font-bold ${bkg.checkedIn ? 'text-emerald-500' : 'text-amber-500'}`}>
+                            {bkg.checkedIn ? 'CHECKED IN ✓' : 'NOT CHECKED IN'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="pt-1 flex items-center justify-between gap-2">
+                        <Link
+                          to={`/events/${eventObj?._id || bkg.eventId}/qr`}
+                          className="flex-1 flex items-center justify-center space-x-1.5 px-3 py-2 rounded-xl gold-gradient-btn text-[11px] font-extrabold text-utsav-maroon-950 shadow-sm hover:scale-105 transition-transform"
+                        >
+                          <QrCode className="w-3.5 h-3.5" />
+                          <span>[ My QR Pass ]</span>
+                        </Link>
+
+                        <Link
+                          to={`/events/${eventObj?._id || bkg.eventId}`}
+                          className="px-3 py-2 rounded-xl bg-utsav-beige-100 dark:bg-utsav-maroon-900 border border-utsav-gold/40 text-[11px] font-bold text-utsav-maroon-800 dark:text-utsav-gold hover:bg-utsav-gold hover:text-utsav-maroon-950 transition-colors"
+                        >
+                          [ View Event ]
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                }
 
                 return (
                   <div
