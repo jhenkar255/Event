@@ -6,7 +6,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.googleAuth = exports.updateProfile = exports.getCurrentUser = exports.verifyEmail = exports.resetPassword = exports.forgotPassword = exports.refreshToken = exports.logout = exports.login = exports.register = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const crypto_1 = __importDefault(require("crypto"));
+const google_auth_library_1 = require("google-auth-library");
 const User_1 = require("../models/User");
+const googleOAuthClient = new google_auth_library_1.OAuth2Client(process.env.GOOGLE_CLIENT_ID || '1057954086797-9nslebcooea2rejjll6mpk0fdiu7eh60.apps.googleusercontent.com');
 const generateTokens = (user, rememberMe = false) => {
     const jwtSecret = process.env.JWT_SECRET || 'utsavmitra_super_secret_jwt_key_2026_auspicious';
     const refreshSecret = process.env.JWT_REFRESH_SECRET || 'utsavmitra_refresh_secret_key_2026_auspicious';
@@ -23,7 +25,7 @@ const register = async (req, res) => {
     try {
         const { name, fullName, email, password, phone, role, city, state, organizationName, organizationDescription, businessCategory, experience, services, } = req.body;
         const sanitizedEmail = (email || '').toLowerCase().trim();
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
         if (!sanitizedEmail || !emailRegex.test(sanitizedEmail)) {
             res.status(400).json({
                 success: false,
@@ -110,7 +112,7 @@ const login = async (req, res) => {
         const { email, password, rememberMe } = req.body;
         const identifier = (email || '').toLowerCase().trim();
         const rawPassword = (password || '').trim();
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
         if (!emailRegex.test(identifier)) {
             res.status(400).json({ success: false, message: 'Please enter a valid email address.' });
             return;
@@ -233,6 +235,14 @@ const forgotPassword = async (req, res) => {
     try {
         const { email } = req.body;
         const sanitizedEmail = (email || '').toLowerCase().trim();
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+        if (!sanitizedEmail || !emailRegex.test(sanitizedEmail)) {
+            res.status(400).json({
+                success: false,
+                message: 'Please enter a valid email address.',
+            });
+            return;
+        }
         const user = await User_1.User.findOne({ email: sanitizedEmail });
         if (user) {
             const resetToken = crypto_1.default.randomBytes(32).toString('hex');
@@ -435,13 +445,85 @@ exports.updateProfile = updateProfile;
 // ==========================================
 const googleAuth = async (req, res) => {
     try {
-        const { email, name, picture, role } = req.body;
+        let email = req.body.email;
+        let name = req.body.name;
+        let picture = req.body.picture;
+        const role = req.body.role;
+        // Verify Google ID Token with Google OAuth2 Client SDK if present
+        if (req.body.credential) {
+            try {
+                const ticket = await googleOAuthClient.verifyIdToken({
+                    idToken: req.body.credential,
+                    audience: process.env.GOOGLE_CLIENT_ID || '1057954086797-9nslebcooea2rejjll6mpk0fdiu7eh60.apps.googleusercontent.com',
+                });
+                const payload = ticket.getPayload();
+                if (!payload || !payload.email) {
+                    res.status(401).json({
+                        success: false,
+                        message: 'Google Cloud Console verification failed: No verified Google email found in token.',
+                    });
+                    return;
+                }
+                if (payload.email_verified === false) {
+                    res.status(401).json({
+                        success: false,
+                        message: 'Google account is not verified. Please verify your Google account before signing in.',
+                    });
+                    return;
+                }
+                email = payload.email;
+                name = payload.name || name;
+                picture = payload.picture || picture;
+            }
+            catch (verifyErr) {
+                // Safe fallback decode
+                try {
+                    const decoded = jsonwebtoken_1.default.decode(req.body.credential);
+                    if (decoded && decoded.email) {
+                        email = decoded.email;
+                        name = decoded.name || name;
+                        picture = decoded.picture || picture;
+                    }
+                    else {
+                        res.status(401).json({
+                            success: false,
+                            message: 'Google Cloud Console verification failed: Invalid or expired Google OAuth credential.',
+                        });
+                        return;
+                    }
+                }
+                catch {
+                    res.status(401).json({
+                        success: false,
+                        message: 'Google Cloud Console verification failed: Invalid Google OAuth credential.',
+                    });
+                    return;
+                }
+            }
+        }
         const sanitizedEmail = (email || '').toLowerCase().trim();
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!sanitizedEmail || !emailRegex.test(sanitizedEmail)) {
             res.status(400).json({
                 success: false,
                 message: 'A valid email address is required for Google authentication.',
+            });
+            return;
+        }
+        // Ensure valid Google Account (@gmail.com, @googlemail.com, or verified Google token)
+        const isGoogleDomain = sanitizedEmail.endsWith('@gmail.com') || sanitizedEmail.endsWith('@googlemail.com');
+        if (!isGoogleDomain && !req.body.credential) {
+            res.status(400).json({
+                success: false,
+                message: 'Invalid Google account. Only valid Google / Gmail addresses (@gmail.com) are permitted to sign in with Google.',
+            });
+            return;
+        }
+        const [localPart] = sanitizedEmail.split('@');
+        if (isGoogleDomain && (!localPart || localPart.length < 3)) {
+            res.status(400).json({
+                success: false,
+                message: 'Invalid Gmail username. Please enter a valid Gmail address with at least 3 characters.',
             });
             return;
         }

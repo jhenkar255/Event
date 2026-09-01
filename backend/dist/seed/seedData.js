@@ -8,6 +8,7 @@ const mongoose_1 = __importDefault(require("mongoose"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const models_1 = require("../models");
 const qrService_1 = require("../services/qrService");
+const mockEvents_1 = require("../shared/mockEvents");
 dotenv_1.default.config();
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/utsavmitra';
 const seedDatabase = async () => {
@@ -485,6 +486,12 @@ const seedDatabase = async () => {
                 },
             ],
         });
+        console.log('🌟 Seeding 40+ Distinct Multi-Category Showcase Events (Education, Corporate, Cultural, Sports, Wedding, Community, Religious, Online)...');
+        for (const showcaseEvt of mockEvents_1.SAMPLE_SHOWCASE_EVENTS) {
+            if (showcaseEvt.eventId !== flagshipEvent.eventId) {
+                await models_1.Event.findOneAndUpdate({ eventId: showcaseEvt.eventId }, { ...showcaseEvt, createdBy: standardUser._id }, { upsert: true, new: true });
+            }
+        }
         console.log('📋 Creating 25 Realistic Guests with Signed QR Passes for Showcase Event...');
         const sampleGuestNames = [
             { name: 'Dr. Devendra Sharma', rel: 'Family', group: 'Groom VIP', meal: 'Veg', plus: 1, rsvp: 'ACCEPTED', check: true },

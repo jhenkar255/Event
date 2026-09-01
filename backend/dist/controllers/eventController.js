@@ -16,32 +16,93 @@ const Invitation_1 = require("../models/Invitation");
 const Booking_1 = require("../models/Booking");
 const constants_1 = require("../shared/constants");
 const socketService_1 = require("../services/socketService");
+const mockEvents_1 = require("../shared/mockEvents");
 const getEvents = async (req, res) => {
     try {
         const filter = {};
-        // Regular users see only their own events unless Admin/Organizer
-        if (req.user?.role === 'USER') {
-            filter.createdBy = req.user.id;
-        }
-        else if (req.query.userId) {
+        // Regular users see only their own events if requested, otherwise public discovery events
+        if (req.query.userId) {
             filter.createdBy = req.query.userId;
         }
-        if (req.query.type) {
+        else if (req.query.myEvents === 'true' && req.user?.id) {
+            filter.createdBy = req.user.id;
+        }
+        if (req.query.type && req.query.type !== 'All') {
             filter.type = req.query.type;
         }
-        if (req.query.status) {
+        const categoryParam = (req.query.category || '').trim();
+        if (categoryParam && categoryParam !== 'All') {
+            const catRegex = new RegExp(categoryParam, 'i');
+            filter.$or = [
+                { category: catRegex },
+                { subcategory: catRegex },
+                { type: catRegex },
+            ];
+        }
+        if (req.query.status && req.query.status !== 'All') {
             filter.status = req.query.status;
         }
-        if (req.query.city) {
+        if (req.query.city && req.query.city !== 'All') {
             filter['location.city'] = new RegExp(req.query.city, 'i');
         }
-        let events = await Event_1.Event.find(filter).populate('venue').sort({ date: 1, createdAt: -1 });
-        // If user has 0 events and didn't apply search filters, fetch public showcase events
-        if (events.length === 0 && req.user?.role === 'USER' && !req.query.type && !req.query.status && !req.query.city) {
-            const showcaseEvents = await Event_1.Event.find().populate('venue').limit(6).sort({ date: 1, createdAt: -1 });
-            if (showcaseEvents.length > 0) {
-                events = showcaseEvents;
+        const formatParam = (req.query.eventType || req.query.eventFormat || req.query.format);
+        if (formatParam && formatParam !== 'All') {
+            const formatRegex = new RegExp(formatParam, 'i');
+            filter.$and = filter.$and || [];
+            filter.$and.push({
+                $or: [
+                    { eventFormat: formatRegex },
+                    { eventType: formatRegex },
+                ]
+            });
+        }
+        if (req.query.priceType === 'FREE') {
+            filter.$or = [{ isFree: true }, { price: 0 }, { ticketPrice: 0 }];
+        }
+        else if (req.query.priceType === 'PAID') {
+            filter.$or = [{ price: { $gt: 0 } }, { ticketPrice: { $gt: 0 } }];
+        }
+        if (req.query.search) {
+            const searchRegex = new RegExp(req.query.search, 'i');
+            filter.$or = [
+                { name: searchRegex },
+                { description: searchRegex },
+                { institutionName: searchRegex },
+                { organizerName: searchRegex },
+                { 'location.city': searchRegex },
+                { 'location.address': searchRegex },
+                { category: searchRegex },
+                { subcategory: searchRegex },
+            ];
+        }
+        let events = await Event_1.Event.find(filter).populate('venue').sort({ isFeatured: -1, date: 1, createdAt: -1 });
+        // If database has 0 events and no restrictive user filter, return rich multi-category showcase events
+        if (events.length === 0 && !req.query.myEvents && !req.query.userId) {
+            let filteredFallback = [...mockEvents_1.SAMPLE_SHOWCASE_EVENTS];
+            if (categoryParam && categoryParam !== 'All') {
+                const catLower = categoryParam.toLowerCase();
+                filteredFallback = filteredFallback.filter(e => (e.category && e.category.toLowerCase().includes(catLower)) ||
+                    (e.subcategory && e.subcategory.toLowerCase().includes(catLower)) ||
+                    (e.type && e.type.toLowerCase().includes(catLower)));
             }
+            if (formatParam && formatParam !== 'All') {
+                const fmtLower = formatParam.toLowerCase();
+                filteredFallback = filteredFallback.filter(e => (e.eventFormat && e.eventFormat.toLowerCase().includes(fmtLower)) ||
+                    (e.eventType && e.eventType.toLowerCase().includes(fmtLower)));
+            }
+            if (req.query.city && req.query.city !== 'All') {
+                const cLower = req.query.city.toLowerCase();
+                filteredFallback = filteredFallback.filter(e => e.location?.city?.toLowerCase().includes(cLower));
+            }
+            if (req.query.search) {
+                const s = req.query.search.toLowerCase();
+                filteredFallback = filteredFallback.filter(e => e.name.toLowerCase().includes(s) ||
+                    (e.description && e.description.toLowerCase().includes(s)) ||
+                    (e.location?.city && e.location.city.toLowerCase().includes(s)) ||
+                    (e.category && e.category.toLowerCase().includes(s)) ||
+                    (e.subcategory && e.subcategory.toLowerCase().includes(s)));
+            }
+            events = filteredFallback;
         }
         res.json({ success: true, count: events.length, events });
     }
@@ -52,9 +113,40 @@ const getEvents = async (req, res) => {
 exports.getEvents = getEvents;
 const createEvent = async (req, res) => {
     try {
+        const rawType = req.body.type || req.body.eventType || 'Wedding';
+        let derivedCategory = req.body.category;
+        if (!derivedCategory) {
+            const typeLower = String(rawType).toLowerCase();
+            if (typeLower.includes('hackathon') || typeLower.includes('college') || typeLower.includes('tech') || typeLower.includes('workshop')) {
+                derivedCategory = 'Education & College';
+            }
+            else if (typeLower.includes('corporate') || typeLower.includes('startup') || typeLower.includes('conclave') || typeLower.includes('business')) {
+                derivedCategory = 'Corporate & Business';
+            }
+            else if (typeLower.includes('cultural') || typeLower.includes('festival') || typeLower.includes('concert') || typeLower.includes('dance')) {
+                derivedCategory = 'Cultural & Entertainment';
+            }
+            else if (typeLower.includes('cricket') || typeLower.includes('sports') || typeLower.includes('marathon')) {
+                derivedCategory = 'Sports';
+            }
+            else if (typeLower.includes('religious') || typeLower.includes('puja') || typeLower.includes('havan')) {
+                derivedCategory = 'Religious & Traditional';
+            }
+            else if (typeLower.includes('community') || typeLower.includes('donation') || typeLower.includes('camp')) {
+                derivedCategory = 'Community & Social';
+            }
+            else {
+                derivedCategory = 'Wedding & Family';
+            }
+        }
+        const derivedSubcategory = req.body.subcategory || rawType || 'Celebration';
+        const derivedEventType = req.body.eventType || req.body.eventFormat || 'OFFLINE';
         const eventData = {
             ...req.body,
-            type: req.body.type || req.body.eventType || 'Wedding',
+            type: rawType,
+            category: derivedCategory,
+            subcategory: derivedSubcategory,
+            eventType: derivedEventType,
             venue: req.body.venue || req.body.venueId || undefined,
             createdBy: req.user?.id,
         };
