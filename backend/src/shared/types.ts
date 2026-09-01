@@ -166,7 +166,7 @@ export interface IEvent {
   distanceKm?: number;
   theme?: string;
   status: EventStatus;
-  createdBy: any;
+  createdBy?: any;
   bannerImage?: string;
   checklist?: IChecklistItem[];
   riskAlerts?: IRiskAlert[];

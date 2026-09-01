@@ -19,6 +19,7 @@ import {
   Notification,
 } from '../models';
 import { QRService } from '../services/qrService';
+import { SAMPLE_SHOWCASE_EVENTS } from '../shared/mockEvents';
 
 dotenv.config();
 
@@ -509,6 +510,17 @@ export const seedDatabase = async (): Promise<void> => {
         },
       ],
     });
+
+    console.log('🌟 Seeding 40+ Distinct Multi-Category Showcase Events (Education, Corporate, Cultural, Sports, Wedding, Community, Religious, Online)...');
+    for (const showcaseEvt of SAMPLE_SHOWCASE_EVENTS) {
+      if (showcaseEvt.eventId !== flagshipEvent.eventId) {
+        await Event.findOneAndUpdate(
+          { eventId: showcaseEvt.eventId },
+          { ...showcaseEvt, createdBy: standardUser._id },
+          { upsert: true, new: true }
+        );
+      }
+    }
 
     console.log('📋 Creating 25 Realistic Guests with Signed QR Passes for Showcase Event...');
     const sampleGuestNames = [

@@ -13,6 +13,7 @@ import { AuthRequest } from '../middleware/auth';
 import { DEFAULT_CHECKLIST_TEMPLATES } from '../shared/constants';
 import { EventType } from '../shared/types';
 import { SocketService } from '../services/socketService';
+import { SAMPLE_SHOWCASE_EVENTS } from '../shared/mockEvents';
 
 export const getEvents = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
@@ -28,11 +29,13 @@ export const getEvents = async (req: AuthRequest, res: Response): Promise<void> 
     if (req.query.type && req.query.type !== 'All') {
       filter.type = req.query.type;
     }
-    if (req.query.category && req.query.category !== 'All') {
+    const categoryParam = (req.query.category as string || '').trim();
+    if (categoryParam && categoryParam !== 'All') {
+      const catRegex = new RegExp(categoryParam, 'i');
       filter.$or = [
-        { category: req.query.category },
-        { subcategory: req.query.category },
-        { type: req.query.category },
+        { category: catRegex },
+        { subcategory: catRegex },
+        { type: catRegex },
       ];
     }
     if (req.query.status && req.query.status !== 'All') {
@@ -41,8 +44,16 @@ export const getEvents = async (req: AuthRequest, res: Response): Promise<void> 
     if (req.query.city && req.query.city !== 'All') {
       filter['location.city'] = new RegExp(req.query.city as string, 'i');
     }
-    if (req.query.format && req.query.format !== 'All') {
-      filter.eventFormat = req.query.format;
+    const formatParam = (req.query.eventType || req.query.eventFormat || req.query.format) as string;
+    if (formatParam && formatParam !== 'All') {
+      const formatRegex = new RegExp(formatParam, 'i');
+      filter.$and = filter.$and || [];
+      filter.$and.push({
+        $or: [
+          { eventFormat: formatRegex },
+          { eventType: formatRegex },
+        ]
+      });
     }
     if (req.query.priceType === 'FREE') {
       filter.$or = [{ isFree: true }, { price: 0 }, { ticketPrice: 0 }];
@@ -66,358 +77,38 @@ export const getEvents = async (req: AuthRequest, res: Response): Promise<void> 
     let events = await Event.find(filter).populate('venue').sort({ isFeatured: -1, date: 1, createdAt: -1 });
 
     // If database has 0 events and no restrictive user filter, return rich multi-category showcase events
-    if (events.length === 0 && !req.query.myEvents) {
-      const showcaseEvents = await Event.find().populate('venue').limit(20).sort({ date: 1, createdAt: -1 });
-      if (showcaseEvents.length > 0) {
-        events = showcaseEvents;
-      } else {
-        // Multi-domain showcase starter events spanning Education, Sports, Wedding, Corporate, Cultural, Religious, etc.
-        events = [
-          {
-            _id: new mongoose.Types.ObjectId('65d000000000000000000001'),
-            eventId: 'EVT-BIT-TECHFEST-2026',
-            name: 'National College Tech Fest & AI Hackathon 2026',
-            category: 'Education & College',
-            subcategory: 'Technical Fest',
-            type: 'Tech Meet & Hackathon',
-            institutionName: 'Bangalore Institute of Technology',
-            department: 'Information Science & Engineering',
-            academicYear: '2026-2027',
-            culturalTradition: 'Custom',
-            date: '2026-09-18',
-            startTime: '09:00 AM',
-            endTime: '06:00 PM',
-            location: {
-              address: 'BIT Main Auditorium & Innovation Lab, VV Puram',
-              city: 'Bengaluru',
-              state: 'Karnataka',
-              pincode: '560004',
-              latitude: 12.9499,
-              longitude: 77.5753,
-            },
-            guestCount: 500,
-            capacity: 600,
-            availableSeats: 120,
-            price: 0,
-            ticketPrice: 0,
-            isFree: true,
-            isFeatured: true,
-            eventFormat: 'IN_PERSON',
-            certificateProvided: true,
-            status: 'CONFIRMED',
-            theme: 'NextGen AI & Cloud Infrastructure',
-            description: 'Grand inter-college technical fest with 24-hr Hackathon, Paper Presentation, Coding Battles, Robotics arena, and Project Expo with cash prizes worth ₹2 Lakhs.',
-            organizerName: 'BIT Department of ISE',
-            speakers: [
-              { name: 'Dr. Ramesh Kumar', designation: 'Head of AI Research', organization: 'Google India', topic: 'Generative AI & Agentic Architectures' },
-              { name: 'Priya Sharma', designation: 'VP of Engineering', organization: 'Infosys', topic: 'Building Scalable Cloud Native Systems' }
-            ],
-            bannerImage: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=1200&q=80',
-          },
-          {
-            _id: new mongoose.Types.ObjectId('65d000000000000000000002'),
-            eventId: 'EVT-CULTURAL-MYSURU-2026',
-            name: 'Mysuru Cultural Night & Heritage Music Festival 2026',
-            category: 'Cultural & Entertainment',
-            subcategory: 'Cultural Festival',
-            type: 'Cultural Fest',
-            culturalTradition: 'South Indian',
-            date: '2026-09-25',
-            startTime: '05:30 PM',
-            endTime: '11:00 PM',
-            location: {
-              address: 'Mysore Palace Open Air Amphitheatre',
-              city: 'Mysuru',
-              state: 'Karnataka',
-              pincode: '570001',
-              latitude: 12.3051,
-              longitude: 76.6551,
-            },
-            guestCount: 1500,
-            capacity: 2000,
-            availableSeats: 350,
-            price: 500,
-            ticketPrice: 500,
-            isFree: false,
-            isFeatured: true,
-            eventFormat: 'IN_PERSON',
-            status: 'CONFIRMED',
-            theme: 'Carnatic Classical, Folk Fusion & Shehnai Gala',
-            description: 'Mesmerizing evening of South Indian classical symphony, Yakshagana dance drama, and contemporary fusion band performances against the illuminated royal palace.',
-            organizerName: 'Mysuru Heritage Arts Foundation',
-            bannerImage: 'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?auto=format&fit=crop&w=1200&q=80',
-          },
-          {
-            _id: new mongoose.Types.ObjectId('65d000000000000000000003'),
-            eventId: 'EVT-CRICKET-CUP-2026',
-            name: 'Karnataka Inter-College Cricket Cup Championship',
-            category: 'Sports',
-            subcategory: 'Cricket Tournament',
-            type: 'College Event',
-            institutionName: 'Karnataka University Sports Association',
-            date: '2026-10-02',
-            startTime: '08:00 AM',
-            endTime: '06:00 PM',
-            location: {
-              address: 'Chinnaswamy Stadium B-Ground',
-              city: 'Bengaluru',
-              state: 'Karnataka',
-              pincode: '560001',
-              latitude: 12.9788,
-              longitude: 77.5996,
-            },
-            guestCount: 800,
-            capacity: 1000,
-            availableSeats: 200,
-            price: 300,
-            ticketPrice: 300,
-            isFree: false,
-            isFeatured: true,
-            eventFormat: 'IN_PERSON',
-            status: 'CONFIRMED',
-            theme: 'T20 Knockout Tournament & Trophy Gala',
-            description: '32 top collegiate teams battling for the prestigious Karnataka Championship Shield. Live commentary, food court, and celebrity cricketer felicitation.',
-            organizerName: 'Bengaluru Sports Council',
-            bannerImage: 'https://images.unsplash.com/photo-1531415074868-036b1c5f53ec?auto=format&fit=crop&w=1200&q=80',
-          },
-          {
-            _id: new mongoose.Types.ObjectId('65d000000000000000000004'),
-            eventId: 'EVT-VIRTUAL-HACK-2026',
-            name: 'Global AI & Web3 Virtual Hackathon 2026',
-            category: 'Online & Hybrid',
-            subcategory: 'Virtual Hackathon',
-            type: 'Tech Meet & Hackathon',
-            date: '2026-10-12',
-            startTime: '10:00 AM',
-            endTime: '10:00 PM',
-            location: {
-              address: 'Virtual Live Stream & Discord Metaverse Arena',
-              city: 'Online',
-              state: 'Global',
-              pincode: '000000',
-              latitude: 12.9716,
-              longitude: 77.5946,
-            },
-            guestCount: 2500,
-            capacity: 5000,
-            availableSeats: 1400,
-            price: 0,
-            ticketPrice: 0,
-            isFree: true,
-            isFeatured: true,
-            eventFormat: 'ONLINE',
-            isLive: true,
-            streamUrl: 'https://www.youtube.com/watch?v=M7lc1UVf-VE',
-            meetingPlatform: 'Google Meet & YouTube Live',
-            certificateProvided: true,
-            status: 'ONGOING',
-            theme: 'Agentic AI & Decentralized Compute',
-            description: '48-hour global online hackathon with mentors from Google, Microsoft, and DeepMind. ₹5 Lakh bounty pool and direct VC incubation.',
-            organizerName: 'UtsavMitra Developer Guild',
-            bannerImage: 'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1200&q=80',
-          },
-          {
-            _id: new mongoose.Types.ObjectId('65d000000000000000000005'),
-            eventId: 'EVT-ROYAL-JAIPUR-2026',
-            name: 'Royal Rajasthani Palace Wedding & Vivaah – Aarav & Ananya',
-            category: 'Wedding & Family',
-            subcategory: 'Wedding',
-            type: 'Wedding',
-            culturalTradition: 'Rajasthani',
-            date: '2026-11-18',
-            startTime: '10:00 AM',
-            endTime: '11:00 PM',
-            location: {
-              address: 'Amber Heritage Palace & Royal Courtyard',
-              city: 'Jaipur',
-              state: 'Rajasthan',
-              pincode: '302001',
-              latitude: 26.9855,
-              longitude: 75.8513,
-            },
-            guestCount: 450,
-            capacity: 500,
-            availableSeats: 50,
-            price: 0,
-            ticketPrice: 0,
-            isFree: true,
-            isFeatured: false,
-            eventFormat: 'IN_PERSON',
-            status: 'CONFIRMED',
-            theme: 'Royal Rajputana Heritage & Saat Phere',
-            description: 'Grand palace wedding featuring royal elephant swagat, Shehnai troupe, authentic Dal Baati banquet, and fireworks over Maota Lake.',
-            organizerName: 'Royal Rajputana Events',
-            bannerImage: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=80',
-          },
-          {
-            _id: new mongoose.Types.ObjectId('65d000000000000000000006'),
-            eventId: 'EVT-CORP-LEADERSHIP-2026',
-            name: 'India Corporate Leadership Summit & Business Expo',
-            category: 'Corporate & Business',
-            subcategory: 'Leadership Summit',
-            type: 'Corporate Event',
-            date: '2026-11-28',
-            startTime: '09:00 AM',
-            endTime: '06:00 PM',
-            location: {
-              address: 'Jio World Convention Centre, Bandra Kurla Complex',
-              city: 'Mumbai',
-              state: 'Maharashtra',
-              pincode: '400051',
-              latitude: 19.0664,
-              longitude: 72.8687,
-            },
-            guestCount: 650,
-            capacity: 800,
-            availableSeats: 150,
-            price: 1500,
-            ticketPrice: 1500,
-            isFree: false,
-            isFeatured: false,
-            eventFormat: 'HYBRID',
-            streamUrl: 'https://www.youtube.com/watch?v=09R8_2nJtjg',
-            certificateProvided: true,
-            status: 'CONFIRMED',
-            theme: 'Future of Indian Enterprise & ESG Innovation',
-            description: 'Premier executive gathering of CXOs, unicorn founders, and policymakers. Keynote fireside chats, networking luncheon, and corporate excellence awards.',
-            organizerName: 'Bombay Chamber of Commerce',
-            bannerImage: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80',
-          },
-          {
-            _id: new mongoose.Types.ObjectId('65d000000000000000000007'),
-            eventId: 'EVT-GARBA-MAHOTSAV-2026',
-            name: 'Maha Navratri Garba & Dandiya Raas Mahotsav',
-            category: 'Religious & Traditional',
-            subcategory: 'Navratri Celebration',
-            type: 'Festival',
-            culturalTradition: 'Gujarati',
-            date: '2026-10-10',
-            startTime: '07:00 PM',
-            endTime: '02:00 AM',
-            location: {
-              address: 'GMDC Royal Lawns & Open Amphitheatre',
-              city: 'Ahmedabad',
-              state: 'Gujarat',
-              pincode: '380052',
-              latitude: 23.0365,
-              longitude: 72.5448,
-            },
-            guestCount: 3000,
-            capacity: 3500,
-            availableSeats: 500,
-            price: 250,
-            ticketPrice: 250,
-            isFree: false,
-            isFeatured: false,
-            eventFormat: 'IN_PERSON',
-            status: 'CONFIRMED',
-            theme: 'Chaniya Choli & 100-Piece Live Folk Orchestra',
-            description: 'Gujarat’s premier Navratri celebration featuring 9 nights of non-stop Garba, Dhol, Aarti, and traditional culinary stalls.',
-            organizerName: 'Gujarat Cultural Parishad',
-            bannerImage: 'https://images.unsplash.com/photo-1603228254119-e6aefd84be25?auto=format&fit=crop&w=1200&q=80',
-          },
-          {
-            _id: new mongoose.Types.ObjectId('65d000000000000000000008'),
-            eventId: 'EVT-HEALTH-CAMP-2026',
-            name: 'Community Blood Donation & Free Health Screening Camp',
-            category: 'Community & Social',
-            subcategory: 'Blood Donation Camp',
-            type: 'Religious Event',
-            date: '2026-10-20',
-            startTime: '08:30 AM',
-            endTime: '04:30 PM',
-            location: {
-              address: 'KMC Hospital Campus & Community Hall',
-              city: 'Mangaluru',
-              state: 'Karnataka',
-              pincode: '575001',
-              latitude: 12.8703,
-              longitude: 74.8436,
-            },
-            guestCount: 400,
-            capacity: 500,
-            availableSeats: 100,
-            price: 0,
-            ticketPrice: 0,
-            isFree: true,
-            isFeatured: false,
-            eventFormat: 'IN_PERSON',
-            certificateProvided: true,
-            status: 'CONFIRMED',
-            theme: 'Service to Humanity & Voluntary Blood Donation',
-            description: 'Joint initiative with Red Cross Society providing free cardiac screening, diabetes tests, and blood donation certificates with refreshment kits.',
-            organizerName: 'Mangaluru Rotary & Red Cross Society',
-            bannerImage: 'https://images.unsplash.com/photo-1615461066841-6116e61058f4?auto=format&fit=crop&w=1200&q=80',
-          },
-          {
-            _id: new mongoose.Types.ObjectId('65d000000000000000000009'),
-            eventId: 'EVT-GOVT-YOUTH-2026',
-            name: 'Karnataka State Youth Innovation & Governance Assembly',
-            category: 'Government & Public',
-            subcategory: 'Government Program',
-            type: 'Corporate Event',
-            date: '2026-11-05',
-            startTime: '09:30 AM',
-            endTime: '05:00 PM',
-            location: {
-              address: 'Vidhana Soudha Banquet Hall',
-              city: 'Bengaluru',
-              state: 'Karnataka',
-              pincode: '560001',
-              latitude: 12.9797,
-              longitude: 77.5907,
-            },
-            guestCount: 700,
-            capacity: 800,
-            availableSeats: 100,
-            price: 0,
-            ticketPrice: 0,
-            isFree: true,
-            isFeatured: false,
-            eventFormat: 'HYBRID',
-            streamUrl: 'https://www.youtube.com/watch?v=fJ9rUzIMcZQ',
-            certificateProvided: true,
-            status: 'CONFIRMED',
-            theme: 'Youth Civic Leadership & Digital Karnataka',
-            description: 'Official state summit for young leaders, innovators, and university delegates with minister keynotes and policy presentation rounds.',
-            organizerName: 'Department of Youth Empowerment & Sports',
-            bannerImage: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1200&q=80',
-          },
-          {
-            _id: new mongoose.Types.ObjectId('65d000000000000000000010'),
-            eventId: 'EVT-SCHOOL-ANNUAL-2026',
-            name: 'St. Paul High School Golden Jubilee Annual Day & Cultural Gala',
-            category: 'Education & College',
-            subcategory: 'School Annual Day',
-            type: 'College Event',
-            institutionName: 'St. Paul Heritage Academy',
-            date: '2026-12-19',
-            startTime: '04:00 PM',
-            endTime: '09:00 PM',
-            location: {
-              address: 'School Grand Quadrangle & Stadium Ground',
-              city: 'Hubballi',
-              state: 'Karnataka',
-              pincode: '580020',
-              latitude: 15.3647,
-              longitude: 75.1240,
-            },
-            guestCount: 2000,
-            capacity: 2200,
-            availableSeats: 200,
-            price: 0,
-            ticketPrice: 0,
-            isFree: true,
-            isFeatured: false,
-            eventFormat: 'IN_PERSON',
-            status: 'PLANNING',
-            theme: '50 Years of Academic Excellence & Cultural Glory',
-            description: 'Celebration of 50 years of educational excellence with student theatrical acts, martial arts display, choir performance, and academic awards ceremony.',
-            organizerName: 'St. Paul Education Trust',
-            bannerImage: 'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&w=1200&q=80',
-          }
-        ] as any[];
+    if (events.length === 0 && !req.query.myEvents && !req.query.userId) {
+      let filteredFallback = [...SAMPLE_SHOWCASE_EVENTS];
+      if (categoryParam && categoryParam !== 'All') {
+        const catLower = categoryParam.toLowerCase();
+        filteredFallback = filteredFallback.filter(e => 
+          (e.category && e.category.toLowerCase().includes(catLower)) ||
+          (e.subcategory && e.subcategory.toLowerCase().includes(catLower)) ||
+          (e.type && e.type.toLowerCase().includes(catLower))
+        );
       }
+      if (formatParam && formatParam !== 'All') {
+        const fmtLower = formatParam.toLowerCase();
+        filteredFallback = filteredFallback.filter(e => 
+          (e.eventFormat && e.eventFormat.toLowerCase().includes(fmtLower)) ||
+          (e.eventType && e.eventType.toLowerCase().includes(fmtLower))
+        );
+      }
+      if (req.query.city && req.query.city !== 'All') {
+        const cLower = (req.query.city as string).toLowerCase();
+        filteredFallback = filteredFallback.filter(e => e.location?.city?.toLowerCase().includes(cLower));
+      }
+      if (req.query.search) {
+        const s = (req.query.search as string).toLowerCase();
+        filteredFallback = filteredFallback.filter(e => 
+          e.name.toLowerCase().includes(s) ||
+          (e.description && e.description.toLowerCase().includes(s)) ||
+          (e.location?.city && e.location.city.toLowerCase().includes(s)) ||
+          (e.category && e.category.toLowerCase().includes(s)) ||
+          (e.subcategory && e.subcategory.toLowerCase().includes(s))
+        );
+      }
+      events = filteredFallback as any;
     }
 
     res.json({ success: true, count: events.length, events });
@@ -428,9 +119,36 @@ export const getEvents = async (req: AuthRequest, res: Response): Promise<void> 
 
 export const createEvent = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
+    const rawType = req.body.type || req.body.eventType || 'Wedding';
+    let derivedCategory = req.body.category;
+    if (!derivedCategory) {
+      const typeLower = String(rawType).toLowerCase();
+      if (typeLower.includes('hackathon') || typeLower.includes('college') || typeLower.includes('tech') || typeLower.includes('workshop')) {
+        derivedCategory = 'Education & College';
+      } else if (typeLower.includes('corporate') || typeLower.includes('startup') || typeLower.includes('conclave') || typeLower.includes('business')) {
+        derivedCategory = 'Corporate & Business';
+      } else if (typeLower.includes('cultural') || typeLower.includes('festival') || typeLower.includes('concert') || typeLower.includes('dance')) {
+        derivedCategory = 'Cultural & Entertainment';
+      } else if (typeLower.includes('cricket') || typeLower.includes('sports') || typeLower.includes('marathon')) {
+        derivedCategory = 'Sports';
+      } else if (typeLower.includes('religious') || typeLower.includes('puja') || typeLower.includes('havan')) {
+        derivedCategory = 'Religious & Traditional';
+      } else if (typeLower.includes('community') || typeLower.includes('donation') || typeLower.includes('camp')) {
+        derivedCategory = 'Community & Social';
+      } else {
+        derivedCategory = 'Wedding & Family';
+      }
+    }
+
+    const derivedSubcategory = req.body.subcategory || rawType || 'Celebration';
+    const derivedEventType = req.body.eventType || req.body.eventFormat || 'OFFLINE';
+
     const eventData = {
       ...req.body,
-      type: req.body.type || req.body.eventType || 'Wedding',
+      type: rawType,
+      category: derivedCategory,
+      subcategory: derivedSubcategory,
+      eventType: derivedEventType,
       venue: req.body.venue || req.body.venueId || undefined,
       createdBy: req.user?.id,
     };
